@@ -6,6 +6,7 @@
   color: #5a3e36;
   max-width: 80%;
   margin: 0 auto;
+  box-sizing: border-box;
 }
 
 h2 {
@@ -51,6 +52,42 @@ h2 {
   gap: 10px;
 }
 
+.button-group button {
+  padding: 8px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.3s;
+}
+
+.button-group .edit-btn {
+  background-color: #e07b39;
+  color: #fff;
+}
+
+.button-group .edit-btn:hover {
+  background-color: #c9652e;
+}
+
+.button-group .delete-btn {
+  background-color: #b84a39;
+  color: #fff;
+}
+
+.button-group .delete-btn:hover {
+  background-color: #9e3e32;
+}
+
+.button-group .meal-btn {
+  background-color: #7a5c4a;
+  color: #fff;
+}
+
+.button-group .meal-btn:hover {
+  background-color: #5a3e36;
+}
+
 .ingredient-list {
   margin-top: 10px;
   padding-left: 20px;
@@ -59,6 +96,7 @@ h2 {
 
 .instructions {
   font-style: italic;
+  margin-top: 5px;
 }
 
 .modal {
@@ -129,7 +167,40 @@ h2 {
   flex: 1;
 }
 
-.action-btn {
+.form-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.form-buttons button {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.3s;
+}
+
+.form-buttons .action-btn {
+  background-color: #e07b39;
+  color: #fff;
+}
+
+.form-buttons .action-btn:hover {
+  background-color: #c9652e;
+}
+
+.form-buttons .cancel-btn {
+  background-color: #d9a68c;
+  color: #5a3e36;
+}
+
+.form-buttons .cancel-btn:hover {
+  background-color: #c98e73;
+}
+
+.add-recipe-btn {
   background-color: #e07b39;
   color: #fff;
   border: none;
@@ -140,60 +211,6 @@ h2 {
   transition: background-color 0.3s;
 }
 
-.action-btn:hover {
+.add-recipe-btn:hover {
   background-color: #c9652e;
-}
-
-.delete-btn {
-  background-color: #b84a39;
-}
-
-.delete-btn:hover {
-  background-color: #9e3e32;
-}
-
-.meal-btn {
-  background-color: #7a5c4a;
-}
-
-.meal-btn:hover {
-  background-color: #5a3e36;
-}
-
-.cancel-btn {
-  background-color: #d9a68c;
-  color: #5a3e36;
-}
-
-.cancel-btn:hover {
-  background-color: #c98e73;
-}
-
-.icon-btn {
-  background-color: #e07b39;
-  color: #fff;
-  border: none;
-  padding: 5px 10px;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 1.2rem;
-}
-
-.icon-btn:hover {
-  background-color: #c9652e;
-}
-
-.form-buttons {
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
-}
-
-.datepicker {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #d9a68c;
-  border-radius: 5px;
-  background-color: #fff;
-  color: #5a3e36;
 }
