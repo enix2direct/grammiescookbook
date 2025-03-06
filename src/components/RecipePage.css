@@ -109,6 +109,7 @@ h2 {
   display: flex;
   justify-content: center;
   align-items: center;
+  z-index: 1000; /* Increased z-index to ensure it overlays the calendar */
 }
 
 .modal-content {
@@ -120,6 +121,7 @@ h2 {
   overflow-y: auto;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
   border: 1px solid #e07b39;
+  z-index: 1001; /* Ensure content is above the modal background */
 }
 
 .modal-content h3 {
@@ -213,4 +215,13 @@ h2 {
 
 .add-recipe-btn:hover {
   background-color: #c9652e;
+}
+
+.datepicker {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #d9a68c;
+  border-radius: 5px;
+  background-color: #fff;
+  color: #5a3e36;
 }
