@@ -1,15 +1,17 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import './RecipePage.css'; // Create this file for styling
+import './RecipePage.css';
 
 function RecipePage() {
   const [recipes, setRecipes] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [title, setTitle] = useState('');
-  const [ingredients, setIngredients] = useState([{ quantity: '', unit: '', name: '' }, { quantity: '', unit: '', name: '' }]);
+  const [ingredients, setIngredients] = useState([{ quantity: '', unit: '', name: '' }]);
   const [instructions, setInstructions] = useState('');
   const [category, setCategory] = useState('appetizer');
   const [selectedRecipe, setSelectedRecipe] = useState(null);
+  const [isMealModalOpen, setIsMealModalOpen] = useState(false);
+  const [mealRecipeId, setMealRecipeId] = useState(null);
 
   useEffect(() => {
     fetchRecipes();
@@ -26,45 +28,75 @@ function RecipePage() {
       .filter(ing => ing.quantity && ing.name)
       .map(ing => `${ing.quantity} ${ing.unit || ''} ${ing.name}`.trim())
       .join(', ');
-    const response = await axios.post('http://localhost:3000/recipes', { title, ingredients: ingredientString, instructions, category });
-    if (response.data.success) {
-      fetchRecipes();
-      closeModal();
+    try {
+      const response = await axios.post('http://localhost:3000/recipes', { title, ingredients: ingredientString, instructions, category });
+      if (response.data.success) {
+        fetchRecipes();
+        closeModal();
+      }
+    } catch (error) {
+      console.error('Error adding recipe:', error);
     }
   };
 
   const editRecipe = (recipe) => {
     setSelectedRecipe(recipe);
     setTitle(recipe.title);
-    setIngredients(recipe.ingredients.map(ing => ({ ...ing })));
+    setIngredients(recipe.ingredients.length > 0 ? recipe.ingredients : [{ quantity: '', unit: '', name: '' }]);
     setInstructions(recipe.instructions || '');
     setCategory(recipe.category || 'appetizer');
+    setIsModalOpen(true);
   };
 
-  const saveRecipe = async () => {
+  const saveRecipe = async (e) => {
+    e.preventDefault();
     const ingredientString = ingredients
       .filter(ing => ing.quantity && ing.name)
-      .map(ing => `${ing.quantity} ${ing.unit || ''} ${ing.name}`).join(', ');
-    const response = await axios.put(`http://localhost:3000/recipes/${selectedRecipe.id}`, {
-      title,
-      ingredients: ingredientString,
-      instructions,
-      category,
-    });
-    if (response.status === 200) {
-      fetchRecipes();
-      closeModal();
-      setSelectedRecipe(null);
+      .map(ing => `${ing.quantity} ${ing.unit || ''} ${ing.name}`.trim())
+      .join(', ');
+    try {
+      const response = await axios.put(`http://localhost:3000/recipes/${selectedRecipe.id}`, {
+        title,
+        ingredients: ingredientString,
+        instructions,
+        category,
+      });
+      if (response.status === 200) {
+        fetchRecipes();
+        closeModal();
+      }
+    } catch (error) {
+      console.error('Error updating recipe:', error);
     }
   };
 
   const deleteRecipe = async (id) => {
-    await axios.delete(`http://localhost:3000/recipes/${id}`);
-    fetchRecipes();
+    try {
+      await axios.delete(`http://localhost:3000/recipes/${id}`);
+      fetchRecipes();
+    } catch (error) {
+      console.error('Error deleting recipe:', error);
+    }
   };
 
   const addToMealPlan = (recipeId) => {
-    console.log(`Added recipe ${recipeId} to meal plan`);
+    setMealRecipeId(recipeId);
+    setIsMealModalOpen(true);
+  };
+
+  const saveMeal = async () => {
+    if (mealRecipeId) {
+      try {
+        await axios.post('http://localhost:3000/meals', {
+          recipe_id: mealRecipeId,
+          date: new Date().toISOString().split('T')[0],
+        });
+        setIsMealModalOpen(false);
+        setMealRecipeId(null);
+      } catch (error) {
+        console.error('Error adding meal:', error);
+      }
+    }
   };
 
   const addIngredient = () => {
@@ -85,7 +117,7 @@ function RecipePage() {
   const openModal = () => {
     setIsModalOpen(true);
     setTitle('');
-    setIngredients([{ quantity: '', unit: '', name: '' }, { quantity: '', unit: '', name: '' }]);
+    setIngredients([{ quantity: '', unit: '', name: '' }]);
     setInstructions('');
     setCategory('appetizer');
     setSelectedRecipe(null);
@@ -93,24 +125,29 @@ function RecipePage() {
 
   const closeModal = () => {
     setIsModalOpen(false);
+    setSelectedRecipe(null);
   };
 
   return (
     <div className="recipe-page">
-      <h2>Recipes</h2>
-      <button onClick={openModal}>Add Recipe</button>
-      <ul>
+      <div className="recipe-header">
+        <h2>Recipes</h2>
+        <button className="add-recipe-btn" onClick={openModal}>Add Recipe</button>
+      </div>
+      <ul className="recipe-list">
         {recipes.map(recipe => (
-          <li key={recipe.id}>
-            {recipe.title} ({recipe.category})
-            <button onClick={() => editRecipe(recipe)}>Edit</button>
-            <button onClick={() => deleteRecipe(recipe.id)}>Delete</button>
-            <button onClick={() => addToMealPlan(recipe.id)}>Add to Meal Plan</button>
-            <ul>
+          <li key={recipe.id} className="recipe-item">
+            <span>{recipe.title} ({recipe.category})</span>
+            <div className="button-group">
+              <button className="edit-btn" onClick={() => editRecipe(recipe)}>Edit</button>
+              <button className="delete-btn" onClick={() => deleteRecipe(recipe.id)}>Delete</button>
+              <button className="meal-btn" onClick={() => addToMealPlan(recipe.id)}>Add to Meal Plan</button>
+            </div>
+            <ul className="ingredient-list">
               {recipe.ingredients.map((ing, idx) => (
-                <li key={idx}>{`${ing.quantity} ${ing.unit} ${ing.name}`}</li>
+                <li key={idx}>{`${ing.quantity} ${ing.unit || ''} ${ing.name}`}</li>
               ))}
-              {recipe.instructions && <li>Instructions: {recipe.instructions}</li>}
+              {recipe.instructions && <li className="instructions">Instructions: {recipe.instructions}</li>}
             </ul>
           </li>
         ))}
@@ -154,9 +191,9 @@ function RecipePage() {
                       placeholder="Ingredient"
                       required
                     />
-                    <button type="button" onClick={() => removeIngredient(index)}>-</button>
+                    <button type="button" className="icon-btn" onClick={() => removeIngredient(index)}>-</button>
                     {index === ingredients.length - 1 && (
-                      <button type="button" onClick={addIngredient}>+</button>
+                      <button type="button" className="icon-btn" onClick={addIngredient}>+</button>
                     )}
                   </div>
                 ))}
@@ -179,9 +216,24 @@ function RecipePage() {
                   <option value="snack">Snack</option>
                 </select>
               </div>
-              <button type="submit">{selectedRecipe ? 'Save' : 'Add'}</button>
-              <button type="button" onClick={closeModal}>Cancel</button>
+              <div className="form-buttons">
+                <button type="submit" className="action-btn">{selectedRecipe ? 'Save' : 'Add'}</button>
+                <button type="button" className="cancel-btn" onClick={closeModal}>Cancel</button>
+              </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {isMealModalOpen && (
+        <div className="modal">
+          <div className="modal-content">
+            <h3>Add to Meal Plan</h3>
+            <p>Recipe will be added to today’s date.</p>
+            <div className="form-buttons">
+              <button className="action-btn" onClick={saveMeal}>Save</button>
+              <button className="cancel-btn" onClick={() => setIsMealModalOpen(false)}>Cancel</button>
+            </div>
           </div>
         </div>
       )}
