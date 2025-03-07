@@ -5,7 +5,7 @@ import interactionPlugin from '@fullcalendar/interaction';
 import axios from 'axios';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import './RecipePage.css'; // Import RecipePage.css for modal styling
+import './RecipePage.css';
 
 function MealPlanningPage() {
   const [meals, setMeals] = useState([]);
@@ -15,37 +15,41 @@ function MealPlanningPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    fetchMeals();
-    fetchRecipes();
+    const timer = setTimeout(() => {
+      fetchMeals();
+      fetchRecipes();
+    }, 1000);
+    return () => clearTimeout(timer);
   }, []);
 
   const fetchMeals = async () => {
-    const response = await axios.get('http://localhost:3000/meals');
-    setMeals(response.data);
+    try {
+      const response = await axios.get('http://localhost:3000/meals');
+      setMeals(response.data);
+    } catch (error) {
+      console.error('Failed to fetch meals:', error.message, error.response);
+    }
   };
 
   const fetchRecipes = async () => {
-    const response = await axios.get('http://localhost:3000/recipes');
-    setRecipes(response.data);
+    try {
+      const response = await axios.get('http://localhost:3000/recipes');
+      setRecipes(response.data);
+    } catch (error) {
+      console.error('Failed to fetch recipes:', error.message, error.response);
+    }
   };
 
   const handleDateClick = (arg) => {
-    // Only add meal if no modal is open and a date is explicitly clicked
     if (selectedRecipe && !isModalOpen && arg.dayEl) {
       axios.post('http://localhost:3000/meals', {
         recipe_id: selectedRecipe,
         date: arg.dateStr,
       }).then(() => {
         fetchMeals();
-        setSelectedRecipe(''); // Clear selection after adding
+      }).catch(error => {
+        console.error('Error adding meal on date click:', error.message, error.response);
       });
-    }
-  };
-
-  const addToMealPlan = (e) => {
-    e.stopPropagation(); // Prevent click from bubbling to calendar
-    if (selectedRecipe) {
-      setIsModalOpen(true);
     }
   };
 
@@ -57,16 +61,25 @@ function MealPlanningPage() {
           date: selectedDate.toISOString().split('T')[0],
         });
         setIsModalOpen(false);
-        setSelectedRecipe('');
         fetchMeals();
       } catch (error) {
-        console.error('Error adding meal:', error);
+        console.error('Error adding meal:', error.message, error.response);
       }
     }
   };
 
+  const deleteMeal = async (id) => {
+    try {
+      await axios.delete(`http://localhost:3000/meals/${id}`);
+      fetchMeals();
+    } catch (error) {
+      console.error('Error deleting meal:', error.message, error.response);
+    }
+  };
+
   const events = meals.map(meal => ({
-    title: meal.recipe_title,
+    title: `${meal.recipe_title} `,
+    extendedProps: { id: meal.id },
     start: meal.date,
   }));
 
@@ -79,14 +92,22 @@ function MealPlanningPage() {
           <option key={recipe.id} value={recipe.id}>{recipe.title}</option>
         ))}
       </select>
-      <button onClick={addToMealPlan} disabled={!selectedRecipe} className="add-recipe-btn">
-        Add to Meal Plan
-      </button>
       <FullCalendar
         plugins={[dayGridPlugin, interactionPlugin]}
         initialView="dayGridMonth"
         events={events}
         dateClick={handleDateClick}
+        eventContent={(arg) => (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span>{arg.event.title}</span>
+            <button
+              onClick={() => deleteMeal(arg.event.extendedProps.id)}
+              style={{ background: 'none', border: 'none', color: 'red', cursor: 'pointer', padding: '0 5px' }}
+            >
+              x
+            </button>
+          </div>
+        )}
         height="auto"
       />
 

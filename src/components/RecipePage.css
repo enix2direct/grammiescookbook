@@ -1,19 +1,5 @@
 ﻿.recipe-page {
   padding: 20px;
-  background-color: #fff8f0;
-  min-height: 100vh;
-  font-family: 'Arial', sans-serif;
-  color: #5a3e36;
-  max-width: 80%;
-  margin: 0 auto;
-  box-sizing: border-box;
-}
-
-h2 {
-  color: #e07b39;
-  font-size: 2rem;
-  margin-bottom: 20px;
-  text-align: center;
 }
 
 .recipe-header {
@@ -21,82 +7,57 @@ h2 {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  width: 100%; /* Ensure it spans the full parent width */
 }
 
 .recipe-list {
-  list-style: none;
+  list-style-type: none;
   padding: 0;
 }
 
 .recipe-item {
-  background-color: #fff;
-  border-radius: 10px;
+  background-color: #fff5e6; /* Warm beige */
+  border: 1px solid #e6d9c2;
+  border-radius: 5px;
   padding: 15px;
-  margin-bottom: 15px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s;
-}
-
-.recipe-item:hover {
-  transform: translateY(-2px);
-}
-
-.recipe-item span {
-  font-weight: bold;
-  color: #5a3e36;
+  margin-bottom: 10px;
 }
 
 .button-group {
   margin-top: 10px;
   display: flex;
   gap: 10px;
+  align-items: center;
 }
 
-.button-group button {
-  padding: 8px 15px;
+.edit-btn, .delete-btn, .add-recipe-btn {
+  padding: 5px 10px;
   border: none;
-  border-radius: 5px;
+  border-radius: 3px;
   cursor: pointer;
-  font-size: 1rem;
-  transition: background-color 0.3s;
+  color: white;
 }
 
-.button-group .edit-btn {
-  background-color: #e07b39;
-  color: #fff;
+.edit-btn {
+  background-color: #ff9900; /* Warm orange */
 }
 
-.button-group .edit-btn:hover {
-  background-color: #c9652e;
+.delete-btn {
+  background-color: #cc3300; /* Warm red */
 }
 
-.button-group .delete-btn {
-  background-color: #b84a39;
-  color: #fff;
+.add-recipe-btn {
+  background-color: #ff9900; /* Warm orange */
 }
 
-.button-group .delete-btn:hover {
-  background-color: #9e3e32;
-}
-
-.button-group .meal-btn {
-  background-color: #7a5c4a;
-  color: #fff;
-}
-
-.button-group .meal-btn:hover {
-  background-color: #5a3e36;
+.add-recipe-btn:disabled {
+  background-color: #d9b38c; /* Muted beige */
+  cursor: not-allowed;
 }
 
 .ingredient-list {
   margin-top: 10px;
   padding-left: 20px;
-  color: #7a5c4a;
-}
-
-.instructions {
-  font-style: italic;
-  margin-top: 5px;
 }
 
 .modal {
@@ -105,58 +66,38 @@ h2 {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(94, 62, 54, 0.5);
+  background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000; /* Increased z-index to ensure it overlays the calendar */
 }
 
 .modal-content {
-  background: #fff8f0;
-  padding: 25px;
-  border-radius: 15px;
-  width: 550px;
-  max-height: 85vh;
-  overflow-y: auto;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-  border: 1px solid #e07b39;
-  z-index: 1001; /* Ensure content is above the modal background */
-}
-
-.modal-content h3 {
-  color: #e07b39;
-  margin-bottom: 20px;
-  text-align: center;
+  background-color: #fff5e6; /* Warm beige */
+  padding: 20px;
+  border-radius: 5px;
+  width: 80%;
+  max-width: 500px;
 }
 
 .form-section {
-  margin-bottom: 20px;
+  margin-bottom: 15px;
 }
 
 .form-section label {
   display: block;
   margin-bottom: 5px;
-  color: #5a3e36;
-  font-weight: bold;
+  color: #663300; /* Dark brown */
 }
 
-.form-section input,
-.form-section textarea,
-.form-section select {
+.form-section input, .form-section textarea, .form-section select {
   width: 100%;
-  padding: 10px;
-  margin-bottom: 10px;
-  border: 1px solid #d9a68c;
-  border-radius: 5px;
+  padding: 8px;
+  border: 1px solid #e6d9c2;
+  border-radius: 3px;
+  box-sizing: border-box;
   background-color: #fff;
-  color: #5a3e36;
-  font-size: 1rem;
-}
-
-.form-section textarea {
-  min-height: 100px;
-  resize: vertical;
+  color: #663300;
 }
 
 .ingredient-row {
@@ -169,59 +110,55 @@ h2 {
   flex: 1;
 }
 
+.icon-btn {
+  background-color: #d9b38c; /* Muted beige */
+  border: none;
+  border-radius: 3px;
+  padding: 5px 10px;
+  cursor: pointer;
+  color: #663300;
+}
+
 .form-buttons {
   display: flex;
   gap: 10px;
-  justify-content: flex-end;
 }
 
-.form-buttons button {
-  padding: 10px 15px;
+.action-btn, .cancel-btn {
+  padding: 8px 15px;
   border: none;
-  border-radius: 5px;
+  border-radius: 3px;
   cursor: pointer;
-  font-size: 1rem;
-  transition: background-color 0.3s;
+  color: white;
 }
 
-.form-buttons .action-btn {
-  background-color: #e07b39;
-  color: #fff;
+.action-btn {
+  background-color: #ff9900; /* Warm orange */
 }
 
-.form-buttons .action-btn:hover {
-  background-color: #c9652e;
+.cancel-btn {
+  background-color: #cc3300; /* Warm red */
 }
 
-.form-buttons .cancel-btn {
-  background-color: #d9a68c;
-  color: #5a3e36;
-}
-
-.form-buttons .cancel-btn:hover {
-  background-color: #c98e73;
-}
-
-.add-recipe-btn {
-  background-color: #e07b39;
-  color: #fff;
-  border: none;
-  padding: 10px 15px;
-  border-radius: 5px;
+select {
+  padding: 8px 15px;
+  border: 1px solid #e6d9c2; /* Warm border */
+  border-radius: 3px;
+  background-color: #fff5e6; /* Warm beige background */
+  color: #663300; /* Dark brown text */
+  font-size: 14px;
   cursor: pointer;
-  font-size: 1rem;
-  transition: background-color 0.3s;
+  width: 200px; /* Fixed width */
 }
 
-.add-recipe-btn:hover {
-  background-color: #c9652e;
+select:focus {
+  outline: none;
+  border-color: #ff9900; /* Warm orange on focus */
+  box-shadow: 0 0 3px rgba(255, 153, 0, 0.5);
 }
 
-.datepicker {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #d9a68c;
-  border-radius: 5px;
-  background-color: #fff;
-  color: #5a3e36;
+select option {
+  padding: 5px;
+  background-color: #fff5e6; /* Warm beige for options */
+  color: #663300;
 }

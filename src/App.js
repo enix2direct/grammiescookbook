@@ -7,7 +7,7 @@ import './App.css';
 function App() {
   return (
     <Router>
-      <div className="App">
+      <div className="App" style={{ maxWidth: '80%', margin: '0 auto' }}>
         <h1>GrammiesCookbook</h1>
         <nav>
           <Link to="/recipes">Recipes</Link> | <Link to="/meal-planning">Meal Planning</Link>

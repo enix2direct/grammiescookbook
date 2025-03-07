@@ -44,7 +44,6 @@ function RecipePage() {
   const editRecipe = (recipe) => {
     setSelectedRecipe(recipe);
     setTitle(recipe.title);
-    // Parse the ingredients string back into an array of objects for editing
     const parsedIngredients = recipe.ingredients
       ? recipe.ingredients.split(', ').map(ing => {
           const [quantity, ...rest] = ing.split(' ');
@@ -137,16 +136,16 @@ function RecipePage() {
       <ul className="recipe-list">
         {recipes.map(recipe => (
           <li key={recipe.id} className="recipe-item">
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <input
-                type="checkbox"
-                checked={recipe.is_meal_plan_candidate || false}
-                onChange={(e) => toggleMealPlanCandidate(recipe.id, e.target.checked)}
-                style={{ marginRight: '10px' }}
-              />
-              <span>{recipe.title} ({recipe.category})</span>
-            </div>
+            <span>{recipe.title} ({recipe.category})</span>
             <div className="button-group">
+              <label style={{ display: 'flex', alignItems: 'center', marginRight: '10px' }}>
+                <input
+                  type="checkbox"
+                  checked={recipe.is_meal_plan_candidate || false}
+                  onChange={(e) => toggleMealPlanCandidate(recipe.id, e.target.checked)}
+                />
+                <span style={{ marginLeft: '5px' }}>Add to meal plan</span>
+              </label>
               <button className="edit-btn" onClick={() => editRecipe(recipe)}>Edit</button>
               <button className="delete-btn" onClick={() => deleteRecipe(recipe.id)}>Delete</button>
             </div>
