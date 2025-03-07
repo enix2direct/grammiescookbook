@@ -10,16 +10,18 @@ function RecipePage() {
   const [instructions, setInstructions] = useState('');
   const [category, setCategory] = useState('appetizer');
   const [selectedRecipe, setSelectedRecipe] = useState(null);
-  const [isMealModalOpen, setIsMealModalOpen] = useState(false);
-  const [mealRecipeId, setMealRecipeId] = useState(null);
 
   useEffect(() => {
     fetchRecipes();
   }, []);
 
   const fetchRecipes = async () => {
-    const response = await axios.get('http://localhost:3000/recipes');
-    setRecipes(response.data);
+    try {
+      const response = await axios.get('http://localhost:3000/recipes');
+      setRecipes(response.data);
+    } catch (error) {
+      console.error('Failed to fetch recipes:', error.message, error.response);
+    }
   };
 
   const addRecipe = async (e) => {
@@ -35,14 +37,23 @@ function RecipePage() {
         closeModal();
       }
     } catch (error) {
-      console.error('Error adding recipe:', error);
+      console.error('Error adding recipe:', error.message, error.response);
     }
   };
 
   const editRecipe = (recipe) => {
     setSelectedRecipe(recipe);
     setTitle(recipe.title);
-    setIngredients(recipe.ingredients.length > 0 ? recipe.ingredients : [{ quantity: '', unit: '', name: '' }]);
+    // Parse the ingredients string back into an array of objects for editing
+    const parsedIngredients = recipe.ingredients
+      ? recipe.ingredients.split(', ').map(ing => {
+          const [quantity, ...rest] = ing.split(' ');
+          const unit = rest.length > 1 ? rest[0] : '';
+          const name = rest.length > 1 ? rest.slice(1).join(' ') : rest.join(' ');
+          return { quantity, unit, name };
+        })
+      : [{ quantity: '', unit: '', name: '' }];
+    setIngredients(parsedIngredients);
     setInstructions(recipe.instructions || '');
     setCategory(recipe.category || 'appetizer');
     setIsModalOpen(true);
@@ -66,7 +77,7 @@ function RecipePage() {
         closeModal();
       }
     } catch (error) {
-      console.error('Error updating recipe:', error);
+      console.error('Error updating recipe:', error.message, error.response);
     }
   };
 
@@ -75,27 +86,16 @@ function RecipePage() {
       await axios.delete(`http://localhost:3000/recipes/${id}`);
       fetchRecipes();
     } catch (error) {
-      console.error('Error deleting recipe:', error);
+      console.error('Error deleting recipe:', error.message, error.response);
     }
   };
 
-  const addToMealPlan = (recipeId) => {
-    setMealRecipeId(recipeId);
-    setIsMealModalOpen(true);
-  };
-
-  const saveMeal = async () => {
-    if (mealRecipeId) {
-      try {
-        await axios.post('http://localhost:3000/meals', {
-          recipe_id: mealRecipeId,
-          date: new Date().toISOString().split('T')[0],
-        });
-        setIsMealModalOpen(false);
-        setMealRecipeId(null);
-      } catch (error) {
-        console.error('Error adding meal:', error);
-      }
+  const toggleMealPlanCandidate = async (id, isCandidate) => {
+    try {
+      await axios.put(`http://localhost:3000/recipes/${id}`, { is_meal_plan_candidate: isCandidate });
+      fetchRecipes();
+    } catch (error) {
+      console.error('Error updating meal plan candidate:', error.message, error.response);
     }
   };
 
@@ -137,15 +137,22 @@ function RecipePage() {
       <ul className="recipe-list">
         {recipes.map(recipe => (
           <li key={recipe.id} className="recipe-item">
-            <span>{recipe.title} ({recipe.category})</span>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <input
+                type="checkbox"
+                checked={recipe.is_meal_plan_candidate || false}
+                onChange={(e) => toggleMealPlanCandidate(recipe.id, e.target.checked)}
+                style={{ marginRight: '10px' }}
+              />
+              <span>{recipe.title} ({recipe.category})</span>
+            </div>
             <div className="button-group">
               <button className="edit-btn" onClick={() => editRecipe(recipe)}>Edit</button>
               <button className="delete-btn" onClick={() => deleteRecipe(recipe.id)}>Delete</button>
-              <button className="meal-btn" onClick={() => addToMealPlan(recipe.id)}>Add to Meal Plan</button>
             </div>
             <ul className="ingredient-list">
-              {recipe.ingredients.map((ing, idx) => (
-                <li key={idx}>{`${ing.quantity} ${ing.unit || ''} ${ing.name}`}</li>
+              {recipe.ingredients && recipe.ingredients.split(', ').map((ing, idx) => (
+                <li key={idx}>{ing}</li>
               ))}
               {recipe.instructions && <li className="instructions">Instructions: {recipe.instructions}</li>}
             </ul>
@@ -221,19 +228,6 @@ function RecipePage() {
                 <button type="button" className="cancel-btn" onClick={closeModal}>Cancel</button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {isMealModalOpen && (
-        <div className="modal">
-          <div className="modal-content">
-            <h3>Add to Meal Plan</h3>
-            <p>Recipe will be added to today’s date.</p>
-            <div className="form-buttons">
-              <button className="action-btn" onClick={saveMeal}>Save</button>
-              <button className="cancel-btn" onClick={() => setIsMealModalOpen(false)}>Cancel</button>
-            </div>
           </div>
         </div>
       )}

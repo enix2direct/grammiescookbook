@@ -75,7 +75,7 @@ function MealPlanningPage() {
       <h2>Meal Planning</h2>
       <select value={selectedRecipe} onChange={(e) => setSelectedRecipe(e.target.value)}>
         <option value="">Select a Recipe</option>
-        {recipes.map(recipe => (
+        {recipes.filter(recipe => recipe.is_meal_plan_candidate).map(recipe => (
           <option key={recipe.id} value={recipe.id}>{recipe.title}</option>
         ))}
       </select>

@@ -1,165 +1,136 @@
 const express = require('express');
+const cors = require('cors'); // Ensure CORS is imported
+const db = require('./database');
 const app = express();
-const db = require('./database.js');
+const port = 3000;
+
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', 'http://localhost:3001');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
-  res.header('Access-Control-Allow-Headers', 'Content-Type');
-  next();
-});
+app.use(cors()); // Enable CORS for all routes
 
+// Root route for debugging
 app.get('/', (req, res) => {
-  res.json({ message: 'GrammiesCookbook Backend - API Only. Use /recipes, /meals, etc.' });
+  res.send('Welcome to GrammiesCookbook API. Try /recipes or /meals.');
 });
 
-app.post('/recipes', (req, res) => {
-  const { title, ingredients, instructions, category } = req.body;
-  db.run('INSERT INTO recipes (title, instructions, category) VALUES (?, ?, ?)', [title, instructions || '', category || 'appetizer'], function(err) {
-    if (err) {
-      console.log('Error adding recipe:', err);
-      return res.status(500).send('Error adding recipe');
-    }
-    const recipeId = this.lastID;
-    if (ingredients) {
-      const rawIngredients = ingredients.split(',').map(i => i.trim());
-      const parsedIngredients = rawIngredients.map(ing => {
-        const parts = ing.split(' ').filter(Boolean);
-        const quantity = parseFloat(parts[0]) || 0;
-        const unit = parts.length > 2 ? parts[1] : '';
-        const name = parts.slice(parts.length > 2 ? 2 : 1).join(' ');
-        return { quantity, unit, name };
-      });
-      if (parsedIngredients.length > 0) {
-        const placeholders = parsedIngredients.map(() => '(?, ?, ?, ?)').join(',');
-        const values = parsedIngredients.flatMap(ing => [recipeId, ing.quantity, ing.unit, ing.name]);
-        db.run(`INSERT INTO ingredients (recipe_id, quantity, unit, name) VALUES ${placeholders}`, values, (err) => {
-          if (err) {
-            console.log('Error adding ingredients:', err);
-            return res.status(500).send('Error adding ingredients');
-          }
-          res.status(200).json({ id: recipeId, success: true });
-        });
-      } else {
-        res.status(200).json({ id: recipeId, success: true });
-      }
-    } else {
-      res.status(200).json({ id: recipeId, success: true });
-    }
-  });
-});
-
+// Get all recipes
 app.get('/recipes', (req, res) => {
-  db.all('SELECT r.id, r.title, r.instructions, r.category, i.quantity, i.unit, i.name FROM recipes r LEFT JOIN ingredients i ON r.id = i.recipe_id', (err, rows) => {
+  db.all('SELECT * FROM recipes', (err, rows) => {
     if (err) {
-      console.log('Fetch Error:', err);
-      return res.status(500).send('Error fetching recipes');
-    }
-    const recipes = {};
-    rows.forEach(row => {
-      if (!recipes[row.id]) {
-        recipes[row.id] = { id: row.id, title: row.title, instructions: row.instructions, category: row.category || 'appetizer', ingredients: [] };
-      }
-      if (row.name) {
-        recipes[row.id].ingredients.push({ quantity: row.quantity, unit: row.unit, name: row.name });
-      }
-    });
-    res.json(Object.values(recipes));
-  });
-});
-
-app.put('/recipes/:id', (req, res) => {
-  const recipeId = req.params.id;
-  const { title, ingredients, instructions, category } = req.body;
-  db.run('UPDATE recipes SET title = ?, instructions = ?, category = ? WHERE id = ?', [title, instructions || '', category || 'appetizer', recipeId], (err) => {
-    if (err) {
-      console.log('Error updating recipe:', err);
-      return res.status(500).send('Error updating recipe');
-    }
-    db.run('DELETE FROM ingredients WHERE recipe_id = ?', [recipeId], (err) => {
-      if (err) {
-        console.log('Error deleting old ingredients:', err);
-        return res.status(500).send('Error deleting old ingredients');
-      }
-      if (ingredients) {
-        const rawIngredients = ingredients.split(',').map(i => i.trim());
-        const parsedIngredients = rawIngredients.map(ing => {
-          const parts = ing.split(' ').filter(Boolean);
-          const quantity = parseFloat(parts[0]) || 0;
-          const unit = parts.length > 2 ? parts[1] : '';
-          const name = parts.slice(parts.length > 2 ? 2 : 1).join(' ');
-          return { quantity, unit, name };
-        });
-        if (parsedIngredients.length > 0) {
-          const placeholders = parsedIngredients.map(() => '(?, ?, ?, ?)').join(',');
-          const values = parsedIngredients.flatMap(ing => [recipeId, ing.quantity, ing.unit, ing.name]);
-          db.run(`INSERT INTO ingredients (recipe_id, quantity, unit, name) VALUES ${placeholders}`, values, (err) => {
-            if (err) {
-              console.log('Error adding new ingredients:', err);
-              return res.status(500).send('Error adding new ingredients');
-            }
-            res.status(200).send('Recipe updated');
-          });
-        } else {
-          res.status(200).send('Recipe updated');
-        }
-      } else {
-        res.status(200).send('Recipe updated');
-      }
-    });
-  });
-});
-
-app.delete('/recipes/:id', (req, res) => {
-  const recipeId = req.params.id;
-  db.run('DELETE FROM ingredients WHERE recipe_id = ?', [recipeId], (err) => {
-    if (err) {
-      console.log('Error deleting ingredients:', err);
-      return res.status(500).send('Error deleting ingredients');
-    }
-    db.run('DELETE FROM meals WHERE recipe_id = ?', [recipeId], (err) => {
-      if (err) {
-        console.log('Error deleting meals:', err);
-        return res.status(500).send('Error deleting meals');
-      }
-      db.run('DELETE FROM recipes WHERE id = ?', [recipeId], (err) => {
-        if (err) {
-          console.log('Error deleting recipe:', err);
-          return res.status(500).send('Error deleting recipe');
-        }
-        res.status(200).send('Recipe deleted');
-      });
-    });
-  });
-});
-
-app.post('/meals', (req, res) => {
-  const { recipe_id, date } = req.body;
-  db.run('INSERT INTO meals (recipe_id, date) VALUES (?, ?)', [recipe_id, date], (err) => {
-    if (err) {
-      console.log('Error adding meal:', err);
-      return res.status(500).send('Error adding meal');
-    }
-    res.status(200).json({ success: true });
-  });
-});
-
-app.get('/meals', (req, res) => {
-  const { startDate, endDate } = req.query;
-  let query = 'SELECT m.id, m.date, r.title AS recipe_title FROM meals m JOIN recipes r ON m.recipe_id = r.id';
-  let params = [];
-  if (startDate && endDate) {
-    query += ' WHERE m.date BETWEEN ? AND ?';
-    params = [startDate, endDate];
-  }
-  db.all(query, params, (err, rows) => {
-    if (err) {
-      console.log('Fetch Error:', err);
-      return res.status(500).send('Error fetching meals');
+      res.status(500).json({ error: err.message });
+      return;
     }
     res.json(rows);
   });
 });
 
-app.listen(3000, () => console.log('Backend running on port 3000'));
+// Add a new recipe
+app.post('/recipes', (req, res) => {
+  const { title, ingredients, instructions, category } = req.body;
+  db.run(
+    'INSERT INTO recipes (title, ingredients, instructions, category) VALUES (?, ?, ?, ?)',
+    [title, ingredients, instructions, category],
+    function (err) {
+      if (err) {
+        res.status(500).json({ error: err.message });
+        return;
+      }
+      res.json({ success: true, id: this.lastID });
+    }
+  );
+});
+
+// Update a recipe (partial update)
+app.put('/recipes/:id', (req, res) => {
+  const { id } = req.params;
+  const { title, ingredients, instructions, category, is_meal_plan_candidate } = req.body;
+
+  const fields = [];
+  const values = [];
+  if (title !== undefined) {
+    fields.push('title = ?');
+    values.push(title);
+  }
+  if (ingredients !== undefined) {
+    fields.push('ingredients = ?');
+    values.push(ingredients);
+  }
+  if (instructions !== undefined) {
+    fields.push('instructions = ?');
+    values.push(instructions);
+  }
+  if (category !== undefined) {
+    fields.push('category = ?');
+    values.push(category);
+  }
+  if (is_meal_plan_candidate !== undefined) {
+    fields.push('is_meal_plan_candidate = ?');
+    values.push(is_meal_plan_candidate ? 1 : 0);
+  }
+
+  if (fields.length === 0) {
+    res.status(400).json({ error: 'No fields provided to update' });
+    return;
+  }
+
+  const sql = `UPDATE recipes SET ${fields.join(', ')} WHERE id = ?`;
+  values.push(id);
+
+  db.run(sql, values, function (err) {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    if (this.changes === 0) {
+      res.status(404).json({ error: 'Recipe not found' });
+      return;
+    }
+    res.status(200).json({ success: true });
+  });
+});
+
+// Delete a recipe
+app.delete('/recipes/:id', (req, res) => {
+  const { id } = req.params;
+  db.run('DELETE FROM recipes WHERE id = ?', [id], function (err) {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    res.json({ success: true });
+  });
+});
+
+// Get all meals
+app.get('/meals', (req, res) => {
+  db.all(`
+    SELECT meals.id, meals.date, recipes.title AS recipe_title
+    FROM meals
+    JOIN recipes ON meals.recipe_id = recipes.id
+  `, (err, rows) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    res.json(rows);
+  });
+});
+
+// Add a new meal
+app.post('/meals', (req, res) => {
+  const { recipe_id, date } = req.body;
+  db.run(
+    'INSERT INTO meals (recipe_id, date) VALUES (?, ?)',
+    [recipe_id, date],
+    function (err) {
+      if (err) {
+        res.status(500).json({ error: err.message });
+        return;
+      }
+      res.json({ success: true, id: this.lastID });
+    }
+  );
+});
+
+app.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}`);
+});

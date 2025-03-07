@@ -13,6 +13,7 @@ function App() {
           <Link to="/recipes">Recipes</Link> | <Link to="/meal-planning">Meal Planning</Link>
         </nav>
         <Routes>
+          <Route path="/" element={<div>Welcome! Choose a page above.</div>} />
           <Route path="/recipes" element={<RecipePage />} />
           <Route path="/meal-planning" element={<MealPlanningPage />} />
         </Routes>
