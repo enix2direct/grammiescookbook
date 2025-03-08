@@ -15,11 +15,8 @@ function MealPlanningPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchMeals();
-      fetchRecipes();
-    }, 1000);
-    return () => clearTimeout(timer);
+    fetchMeals();
+    fetchRecipes();
   }, []);
 
   const fetchMeals = async () => {
@@ -77,10 +74,25 @@ function MealPlanningPage() {
     }
   };
 
+  const getCategoryColor = (category) => {
+    switch (category) {
+      case 'breakfast': return '#ffcc99'; // Light peach
+      case 'appetizer': return '#ff9999'; // Light red
+      case 'entree': return '#99cc99'; // Light green
+      case 'side dish': return '#cccc99'; // Light olive
+      case 'dessert': return '#ff99cc'; // Light pink
+      case 'snack': return '#99cccc'; // Light teal
+      default: return '#fff5e6'; // Default beige
+    }
+  };
+
   const events = meals.map(meal => ({
     title: `${meal.recipe_title} `,
     extendedProps: { id: meal.id },
     start: meal.date,
+    backgroundColor: getCategoryColor(meal.category),
+    borderColor: getCategoryColor(meal.category),
+    textColor: '#663300', // Dark brown for contrast
   }));
 
   return (
@@ -92,13 +104,21 @@ function MealPlanningPage() {
           <option key={recipe.id} value={recipe.id}>{recipe.title}</option>
         ))}
       </select>
+      <div className="category-legend">
+        <span className="legend-item" style={{ backgroundColor: '#ffcc99' }}>Breakfast</span>
+        <span className="legend-item" style={{ backgroundColor: '#ff9999' }}>Appetizer</span>
+        <span className="legend-item" style={{ backgroundColor: '#99cc99' }}>Entrée</span>
+        <span className="legend-item" style={{ backgroundColor: '#cccc99' }}>Side Dish</span>
+        <span className="legend-item" style={{ backgroundColor: '#ff99cc' }}>Dessert</span>
+        <span className="legend-item" style={{ backgroundColor: '#99cccc' }}>Snack</span>
+      </div>
       <FullCalendar
         plugins={[dayGridPlugin, interactionPlugin]}
         initialView="dayGridMonth"
         events={events}
         dateClick={handleDateClick}
         eventContent={(arg) => (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
             <span>{arg.event.title}</span>
             <button
               onClick={() => deleteMeal(arg.event.extendedProps.id)}

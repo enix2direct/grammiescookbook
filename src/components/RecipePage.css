@@ -7,7 +7,7 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
-  width: 100%; /* Ensure it spans the full parent width */
+  width: 100%;
 }
 
 .recipe-list {
@@ -161,4 +161,18 @@ select option {
   padding: 5px;
   background-color: #fff5e6; /* Warm beige for options */
   color: #663300;
+}
+
+.category-legend {
+  margin: 10px 0;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  padding: 5px 10px;
+  border-radius: 3px;
+  color: #663300; /* Dark brown text */
+  font-size: 12px;
 }

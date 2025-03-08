@@ -8,7 +8,7 @@ function RecipePage() {
   const [title, setTitle] = useState('');
   const [ingredients, setIngredients] = useState([{ quantity: '', unit: '', name: '' }]);
   const [instructions, setInstructions] = useState('');
-  const [category, setCategory] = useState('appetizer');
+  const [category, setCategory] = useState('breakfast');
   const [selectedRecipe, setSelectedRecipe] = useState(null);
 
   useEffect(() => {
@@ -54,7 +54,7 @@ function RecipePage() {
       : [{ quantity: '', unit: '', name: '' }];
     setIngredients(parsedIngredients);
     setInstructions(recipe.instructions || '');
-    setCategory(recipe.category || 'appetizer');
+    setCategory(recipe.category || 'breakfast');
     setIsModalOpen(true);
   };
 
@@ -118,7 +118,7 @@ function RecipePage() {
     setTitle('');
     setIngredients([{ quantity: '', unit: '', name: '' }]);
     setInstructions('');
-    setCategory('appetizer');
+    setCategory('breakfast');
     setSelectedRecipe(null);
   };
 
@@ -215,6 +215,7 @@ function RecipePage() {
               <div className="form-section">
                 <label>Category:</label>
                 <select value={category} onChange={(e) => setCategory(e.target.value)}>
+                  <option value="breakfast">Breakfast</option>
                   <option value="appetizer">Appetizer</option>
                   <option value="entree">Entrée</option>
                   <option value="side dish">Side Dish</option>

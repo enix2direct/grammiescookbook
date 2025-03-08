@@ -97,7 +97,7 @@ app.delete('/recipes/:id', (req, res) => {
 
 app.get('/meals', (req, res) => {
   db.all(`
-    SELECT meals.id, meals.date, recipes.title AS recipe_title
+    SELECT meals.id, meals.date, recipes.title AS recipe_title, recipes.category
     FROM meals
     JOIN recipes ON meals.recipe_id = recipes.id
   `, (err, rows) => {
