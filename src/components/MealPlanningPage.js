@@ -22,6 +22,7 @@ function MealPlanningPage() {
   const fetchMeals = async () => {
     try {
       const response = await axios.get('http://localhost:3000/meals');
+      console.log('Meals fetched:', response.data);
       setMeals(response.data);
     } catch (error) {
       console.error('Failed to fetch meals:', error.message, error.response);
@@ -86,14 +87,35 @@ function MealPlanningPage() {
     }
   };
 
-  const events = meals.map(meal => ({
-    title: `${meal.recipe_title} `,
-    extendedProps: { id: meal.id },
-    start: meal.date,
-    backgroundColor: getCategoryColor(meal.category),
-    borderColor: getCategoryColor(meal.category),
-    textColor: '#663300', // Dark brown for contrast
-  }));
+  const categoryOrder = [
+    'breakfast',
+    'appetizer',
+    'entree',
+    'side dish',
+    'dessert',
+    'snack'
+  ];
+
+  const events = meals
+    .map(meal => ({
+      title: `${meal.recipe_title} `,
+      extendedProps: { id: meal.id },
+      start: meal.date,
+      backgroundColor: getCategoryColor(meal.category),
+      borderColor: getCategoryColor(meal.category),
+      textColor: '#663300',
+      category: meal.category
+    }))
+    .sort((a, b) => {
+      const dateA = new Date(a.start);
+      const dateB = new Date(b.start);
+      if (dateA < dateB) return -1;
+      if (dateA > dateB) return 1;
+      const orderA = categoryOrder.indexOf(a.category);
+      const orderB = categoryOrder.indexOf(b.category);
+      console.log(`Sorting ${a.title} (${a.category}, ${orderA}) vs ${b.title} (${b.category}, ${orderB})`);
+      return orderA - orderB;
+    });
 
   return (
     <div>
@@ -128,9 +150,9 @@ function MealPlanningPage() {
             </button>
           </div>
         )}
+        eventOrder={(a, b) => categoryOrder.indexOf(a.extendedProps.category) - categoryOrder.indexOf(b.extendedProps.category)}
         height="auto"
       />
-
       {isModalOpen && (
         <div className="modal">
           <div className="modal-content">
