@@ -16,7 +16,7 @@
 }
 
 .recipe-item {
-  background-color: #fff5e6; /* Warm beige */
+  background-color: #fff5e6;
   border: 1px solid #e6d9c2;
   border-radius: 5px;
   padding: 15px;
@@ -39,19 +39,19 @@
 }
 
 .edit-btn {
-  background-color: #ff9900; /* Warm orange */
+  background-color: #ff9900;
 }
 
 .delete-btn {
-  background-color: #cc3300; /* Warm red */
+  background-color: #cc3300;
 }
 
 .add-recipe-btn {
-  background-color: #ff9900; /* Warm orange */
+  background-color: #ff9900;
 }
 
 .add-recipe-btn:disabled {
-  background-color: #d9b38c; /* Muted beige */
+  background-color: #d9b38c;
   cursor: not-allowed;
 }
 
@@ -73,7 +73,7 @@
 }
 
 .modal-content {
-  background-color: #fff5e6; /* Warm beige */
+  background-color: #fff5e6;
   padding: 20px;
   border-radius: 5px;
   width: 80%;
@@ -87,7 +87,7 @@
 .form-section label {
   display: block;
   margin-bottom: 5px;
-  color: #663300; /* Dark brown */
+  color: #663300;
 }
 
 .form-section input, .form-section textarea, .form-section select {
@@ -111,7 +111,7 @@
 }
 
 .icon-btn {
-  background-color: #d9b38c; /* Muted beige */
+  background-color: #d9b38c;
   border: none;
   border-radius: 3px;
   padding: 5px 10px;
@@ -133,33 +133,33 @@
 }
 
 .action-btn {
-  background-color: #ff9900; /* Warm orange */
+  background-color: #ff9900;
 }
 
 .cancel-btn {
-  background-color: #cc3300; /* Warm red */
+  background-color: #cc3300;
 }
 
 select {
   padding: 8px 15px;
-  border: 1px solid #e6d9c2; /* Warm border */
+  border: 1px solid #e6d9c2;
   border-radius: 3px;
-  background-color: #fff5e6; /* Warm beige background */
-  color: #663300; /* Dark brown text */
+  background-color: #fff5e6;
+  color: #663300;
   font-size: 14px;
   cursor: pointer;
-  width: 200px; /* Fixed width */
+  width: 200px;
 }
 
 select:focus {
   outline: none;
-  border-color: #ff9900; /* Warm orange on focus */
+  border-color: #ff9900;
   box-shadow: 0 0 3px rgba(255, 153, 0, 0.5);
 }
 
 select option {
   padding: 5px;
-  background-color: #fff5e6; /* Warm beige for options */
+  background-color: #fff5e6;
   color: #663300;
 }
 
@@ -173,6 +173,39 @@ select option {
 .legend-item {
   padding: 5px 10px;
   border-radius: 3px;
-  color: #663300; /* Dark brown text */
+  color: #663300;
   font-size: 12px;
+}
+
+.recipe-boxes {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+  overflow-x: auto;
+  padding-bottom: 10px;
+}
+
+.recipe-box {
+  padding: 10px;
+  border-radius: 5px;
+  color: #663300;
+  min-width: 120px;
+  border: 2px solid #e6d9c2;
+}
+
+.recipe-box .recipe-item {
+  background-color: transparent; /* No beige background inside category box */
+  border: none;
+  padding: 5px 0;
+  margin: 5px 0;
+  cursor: pointer;
+}
+
+.recipe-box .recipe-item:hover {
+  opacity: 0.9;
+}
+
+.recipe-box .recipe-item.selected {
+  font-weight: bold;
+  border-bottom: 2px solid #663300; /* Underline instead of full border */
 }
