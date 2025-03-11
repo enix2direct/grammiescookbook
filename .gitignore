@@ -34,3 +34,6 @@ Thumbs.db
 
 # Backend database (if local only)
 backend/recipes.db
+
+# Backend dependencies
+backend/node_modules/
