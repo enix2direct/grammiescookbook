@@ -10,9 +10,37 @@
   width: 100%;
 }
 
-.recipe-list {
-  list-style-type: none;
-  padding: 0;
+.recipe-container {
+  max-width: 1199px; /* Max width before columns */
+  margin: 0 auto;
+}
+
+.category-section {
+  margin-bottom: 20px;
+}
+
+.category-title {
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #f5f5f5;
+  padding: 10px;
+  border-radius: 5px;
+  font-size: 1.5em;
+  color: #663300;
+}
+
+.toggle-arrow {
+  font-size: 1em;
+  margin-left: 10px;
+}
+
+.recipe-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Dynamic columns */
+  gap: 20px;
+  padding: 10px 0;
 }
 
 .recipe-item {
@@ -20,7 +48,6 @@
   border: 1px solid #e6d9c2;
   border-radius: 5px;
   padding: 15px;
-  margin-bottom: 10px;
 }
 
 .button-group {
@@ -90,7 +117,9 @@
   color: #663300;
 }
 
-.form-section input, .form-section textarea, .form-section select {
+.form-section input,
+.form-section textarea,
+.form-section select {
   width: 100%;
   padding: 8px;
   border: 1px solid #e6d9c2;
@@ -124,7 +153,8 @@
   gap: 10px;
 }
 
-.action-btn, .cancel-btn {
+.action-btn,
+.cancel-btn {
   padding: 8px 15px;
   border: none;
   border-radius: 3px;
@@ -163,49 +193,23 @@ select option {
   color: #663300;
 }
 
-.category-legend {
-  margin: 10px 0;
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
+/* Responsive column adjustments */
+@media (min-width: 1200px) {
+  .recipe-container {
+    max-width: none; /* Allow full width above 1199px */
+  }
+  .recipe-grid {
+    grid-template-columns: repeat(2, 1fr); /* 2 columns at 1200px */
+  }
 }
 
-.legend-item {
-  padding: 5px 10px;
-  border-radius: 3px;
-  color: #663300;
-  font-size: 12px;
+@media (min-width: 1800px) {
+  .recipe-grid {
+    grid-template-columns: repeat(3, 1fr); /* 3 columns at 1800px */
+  }
 }
 
-.recipe-boxes {
-  display: flex;
-  gap: 10px;
-  margin-top: 20px;
-  overflow-x: auto;
-  padding-bottom: 10px;
-}
-
-.recipe-box {
-  padding: 10px;
-  border-radius: 5px;
-  color: #663300;
-  min-width: 120px;
-  border: 2px solid #e6d9c2;
-}
-
-.recipe-box .recipe-item {
-  background-color: transparent; /* No beige background inside category box */
-  border: none;
-  padding: 5px 0;
-  margin: 5px 0;
-  cursor: pointer;
-}
-
-.recipe-box .recipe-item:hover {
-  opacity: 0.9;
-}
-
-.recipe-box .recipe-item.selected {
-  font-weight: bold;
-  border-bottom: 2px solid #663300; /* Underline instead of full border */
+/* Remove unused styles */
+.recipe-list, .category-legend, .recipe-boxes, .recipe-box {
+  display: none; /* These were from a previous layout */
 }
