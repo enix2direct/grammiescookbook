@@ -44,20 +44,80 @@
 }
 
 .recipe-item {
-  background-color: #fff5e6;
-  border: 1px solid #e6d9c2;
-  border-radius: 5px;
-  padding: 15px;
+  display: grid;
+  grid-template-areas:
+    "title title"
+    "controls controls"
+    "picture ingredients";
+  grid-template-rows: auto auto 1fr; /* Title, Controls, Picture + Ingredients */
+  grid-template-columns: auto 1fr;   /* Picture | Ingredients */
+  row-gap: 10px;                     /* Space between rows */
+  column-gap: 10px;                  /* Space between picture and ingredients */
+  padding: 15px;                     /* Padding inside the card */
+  background-color: #fff5e6;         /* Light beige background */
+  border: 1px solid #e6d9c2;         /* Subtle border */
+  border-radius: 5px;                /* Rounded corners */
+}
+
+.recipe-left {
+  display: contents; /* Allows child elements to participate in the grid */
+}
+
+.recipe-title {
+  grid-area: title;
+  font-weight: bold;
+  margin: 0; /* Remove default margins */
 }
 
 .button-group {
-  margin-top: 10px;
+  grid-area: controls;
   display: flex;
-  gap: 10px;
+  align-items: center;
+  gap: 10px; /* Space between checkbox and buttons */
+  width: 100%; /* Ensure full row */
+}
+
+.button-group label {
+  display: flex;
   align-items: center;
 }
 
-.edit-btn, .delete-btn, .add-recipe-btn {
+.button-group label span {
+  margin-left: 5px;
+}
+
+.thumbnail-wrapper {
+  grid-area: picture;
+  align-self: start; /* Align picture to the top */
+  min-height: 100px; /* Reserve space for thumbnail alignment */
+  margin-bottom: 0; /* No extra space below thumbnail */
+}
+
+.recipe-thumbnail {
+  width: 100px; /* Fixed width for thumbnail */
+  height: 100px;
+  object-fit: cover; /* Maintain aspect ratio */
+  border-radius: 5px;
+  display: block; /* Remove extra space below image */
+}
+
+.recipe-content {
+  grid-area: ingredients;
+  align-self: start; /* Align ingredients to the top */
+  margin: 0; /* Remove default margins */
+  padding: 0; /* Remove default padding */
+  flex: 1; /* Take remaining space */
+}
+
+.ingredient-list {
+  list-style-position: inside; /* Bullets inside the list */
+  margin: 0; /* Remove default margins */
+  padding: 0; /* Remove default padding */
+}
+
+.edit-btn,
+.delete-btn,
+.add-recipe-btn {
   padding: 5px 10px;
   border: none;
   border-radius: 3px;
@@ -80,11 +140,6 @@
 .add-recipe-btn:disabled {
   background-color: #d9b38c;
   cursor: not-allowed;
-}
-
-.ingredient-list {
-  margin-top: 10px;
-  padding-left: 20px;
 }
 
 .modal {
@@ -210,6 +265,9 @@ select option {
 }
 
 /* Remove unused styles */
-.recipe-list, .category-legend, .recipe-boxes, .recipe-box {
-  display: none; /* These were from a previous layout */
+.recipe-list,
+.category-legend,
+.recipe-boxes,
+.recipe-box {
+  display: none;
 }
