@@ -10,7 +10,11 @@ function RecipePage() {
   const [ingredients, setIngredients] = useState([{ quantity: '', unit: '', name: '' }]);
   const [instructions, setInstructions] = useState('');
   const [category, setCategory] = useState('breakfast');
+  const [thumbnailUrl, setThumbnailUrl] = useState('');
   const [selectedRecipe, setSelectedRecipe] = useState(null);
+
+  // Fixed category order matching MealPlanningPage
+  const categoryOrder = ['breakfast', 'appetizer', 'entree', 'side dish', 'dessert', 'snack'];
 
   useEffect(() => {
     fetchRecipes();
@@ -20,7 +24,7 @@ function RecipePage() {
     try {
       const response = await axios.get('http://localhost:3000/recipes');
       const grouped = response.data.reduce((acc, recipe) => {
-        const cat = recipe.category || 'Uncategorized';
+        const cat = recipe.category?.toLowerCase() || 'uncategorized';
         if (!acc[cat]) acc[cat] = [];
         acc[cat].push(recipe);
         return acc;
@@ -31,18 +35,19 @@ function RecipePage() {
         grouped[cat].sort((a, b) => a.title.localeCompare(b.title));
       });
 
-      // Sort categories alphabetically
-      const sortedCategories = Object.keys(grouped)
-        .sort((a, b) => a.localeCompare(b))
-        .reduce((acc, cat) => {
-          acc[cat] = grouped[cat];
-          return acc;
-        }, {});
+      // Apply fixed category order, with uncategorized last
+      const orderedCategories = {};
+      categoryOrder.forEach(cat => {
+        if (grouped[cat]) orderedCategories[cat] = grouped[cat];
+      });
+      Object.keys(grouped).forEach(cat => {
+        if (!categoryOrder.includes(cat)) orderedCategories[cat] = grouped[cat];
+      });
 
-      setRecipesByCategory(sortedCategories);
+      setRecipesByCategory(orderedCategories);
 
       // Initialize all categories as open
-      const initialOpenState = Object.keys(sortedCategories).reduce((acc, cat) => {
+      const initialOpenState = Object.keys(orderedCategories).reduce((acc, cat) => {
         acc[cat] = true;
         return acc;
       }, {});
@@ -64,6 +69,7 @@ function RecipePage() {
         ingredients: ingredientString,
         instructions,
         category,
+        thumbnail_url: thumbnailUrl || null,
       });
       if (response.data.success) {
         fetchRecipes();
@@ -88,6 +94,7 @@ function RecipePage() {
     setIngredients(parsedIngredients);
     setInstructions(recipe.instructions || '');
     setCategory(recipe.category || 'breakfast');
+    setThumbnailUrl(recipe.thumbnail_url || '');
     setIsModalOpen(true);
   };
 
@@ -103,6 +110,7 @@ function RecipePage() {
         ingredients: ingredientString,
         instructions,
         category,
+        thumbnail_url: thumbnailUrl || null,
       });
       if (response.status === 200) {
         fetchRecipes();
@@ -152,6 +160,7 @@ function RecipePage() {
     setIngredients([{ quantity: '', unit: '', name: '' }]);
     setInstructions('');
     setCategory('breakfast');
+    setThumbnailUrl('');
     setSelectedRecipe(null);
   };
 
@@ -177,7 +186,7 @@ function RecipePage() {
         {Object.entries(recipesByCategory).map(([category, recipes]) => (
           <div key={category} className="category-section">
             <h3 onClick={() => toggleCategory(category)} className="category-title">
-              {category}
+              {category.charAt(0).toUpperCase() + category.slice(1)}
               <span className="toggle-arrow">
                 {openCategories[category] ? '▼' : '▶'}
               </span>
@@ -186,7 +195,7 @@ function RecipePage() {
               <div className="recipe-grid">
                 {recipes.map(recipe => (
                   <div key={recipe.id} className="recipe-item">
-                    <span>{recipe.title}</span>
+                    <span className="recipe-title">{recipe.title}</span>
                     <div className="button-group">
                       <label style={{ display: 'flex', alignItems: 'center', marginRight: '10px' }}>
                         <input
@@ -199,12 +208,19 @@ function RecipePage() {
                       <button className="edit-btn" onClick={() => editRecipe(recipe)}>Edit</button>
                       <button className="delete-btn" onClick={() => deleteRecipe(recipe.id)}>Delete</button>
                     </div>
-                    <ul className="ingredient-list">
-                      {recipe.ingredients && recipe.ingredients.split(', ').map((ing, idx) => (
-                        <li key={idx}>{ing}</li>
-                      ))}
-                      {recipe.instructions && <li className="instructions">Instructions: {recipe.instructions}</li>}
-                    </ul>
+                    <div className="thumbnail-wrapper">
+                      {recipe.thumbnail_url && (
+                        <img src={recipe.thumbnail_url} alt={recipe.title} className="recipe-thumbnail" />
+                      )}
+                    </div>
+                    <div className="recipe-content">
+                      <ul className="ingredient-list">
+                        {recipe.ingredients && recipe.ingredients.split(', ').map((ing, idx) => (
+                          <li key={idx}>{ing}</li>
+                        ))}
+                        {recipe.instructions && <li className="instructions">Instructions: {recipe.instructions}</li>}
+                      </ul>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -276,6 +292,15 @@ function RecipePage() {
                   <option value="dessert">Dessert</option>
                   <option value="snack">Snack</option>
                 </select>
+              </div>
+              <div className="form-section">
+                <label>Thumbnail URL (optional):</label>
+                <input
+                  type="text"
+                  value={thumbnailUrl}
+                  onChange={(e) => setThumbnailUrl(e.target.value)}
+                  placeholder="https://example.com/image.jpg"
+                />
               </div>
               <div className="form-buttons">
                 <button type="submit" className="action-btn">{selectedRecipe ? 'Save' : 'Add'}</button>
