@@ -22,10 +22,10 @@ app.get('/recipes', (req, res) => {
 });
 
 app.post('/recipes', (req, res) => {
-  const { title, ingredients, instructions, category } = req.body;
+  const { title, ingredients, instructions, category, thumbnail_url } = req.body;
   db.run(
-    'INSERT INTO recipes (title, ingredients, instructions, category) VALUES (?, ?, ?, ?)',
-    [title, ingredients, instructions, category],
+    'INSERT INTO recipes (title, ingredients, instructions, category, thumbnail_url) VALUES (?, ?, ?, ?, ?)',
+    [title, ingredients, instructions, category, thumbnail_url || null],
     function (err) {
       if (err) {
         res.status(500).json({ error: err.message });
@@ -38,30 +38,16 @@ app.post('/recipes', (req, res) => {
 
 app.put('/recipes/:id', (req, res) => {
   const { id } = req.params;
-  const { title, ingredients, instructions, category, is_meal_plan_candidate } = req.body;
+  const { title, ingredients, instructions, category, is_meal_plan_candidate, thumbnail_url } = req.body;
 
   const fields = [];
   const values = [];
-  if (title !== undefined) {
-    fields.push('title = ?');
-    values.push(title);
-  }
-  if (ingredients !== undefined) {
-    fields.push('ingredients = ?');
-    values.push(ingredients);
-  }
-  if (instructions !== undefined) {
-    fields.push('instructions = ?');
-    values.push(instructions);
-  }
-  if (category !== undefined) {
-    fields.push('category = ?');
-    values.push(category);
-  }
-  if (is_meal_plan_candidate !== undefined) {
-    fields.push('is_meal_plan_candidate = ?');
-    values.push(is_meal_plan_candidate ? 1 : 0);
-  }
+  if (title !== undefined) { fields.push('title = ?'); values.push(title); }
+  if (ingredients !== undefined) { fields.push('ingredients = ?'); values.push(ingredients); }
+  if (instructions !== undefined) { fields.push('instructions = ?'); values.push(instructions); }
+  if (category !== undefined) { fields.push('category = ?'); values.push(category); }
+  if (is_meal_plan_candidate !== undefined) { fields.push('is_meal_plan_candidate = ?'); values.push(is_meal_plan_candidate ? 1 : 0); }
+  if (thumbnail_url !== undefined) { fields.push('thumbnail_url = ?'); values.push(thumbnail_url); }
 
   if (fields.length === 0) {
     res.status(400).json({ error: 'No fields provided to update' });

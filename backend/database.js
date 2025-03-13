@@ -1,7 +1,6 @@
 const sqlite3 = require('sqlite3').verbose();
 const db = new sqlite3.Database('./recipes.db');
 
-// Create recipes table with is_meal_plan_candidate column
 db.serialize(() => {
   db.run(`
     CREATE TABLE IF NOT EXISTS recipes (
@@ -10,7 +9,8 @@ db.serialize(() => {
       ingredients TEXT NOT NULL,
       instructions TEXT,
       category TEXT,
-      is_meal_plan_candidate INTEGER DEFAULT 0
+      is_meal_plan_candidate INTEGER DEFAULT 0,
+      thumbnail_url TEXT
     )
   `);
 
