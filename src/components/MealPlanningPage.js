@@ -4,6 +4,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import axios from 'axios';
 import DatePicker from 'react-datepicker';
+import { toast, ToastContainer } from 'react-toastify';
 import 'react-datepicker/dist/react-datepicker.css';
 import './RecipePage.css';
 
@@ -26,7 +27,7 @@ function MealPlanningPage() {
       const response = await axios.get('http://localhost:3000/meals');
       setMeals(response.data);
     } catch (error) {
-      console.error('Failed to fetch meals:', error.message, error.response);
+      toast.error('Failed to fetch meals. Please try again.');
     }
   };
 
@@ -35,7 +36,7 @@ function MealPlanningPage() {
       const response = await axios.get('http://localhost:3000/recipes');
       setRecipes(response.data);
     } catch (error) {
-      console.error('Failed to fetch recipes:', error.message, error.response);
+      toast.error('Failed to fetch recipes. Please try again.');
     }
   };
 
@@ -46,8 +47,8 @@ function MealPlanningPage() {
         date: arg.dateStr.split('T')[0],
       }).then(() => {
         fetchMeals();
-      }).catch(error => {
-        console.error('Error adding meal on date click:', error.message, error.response);
+      }).catch(() => {
+        toast.error('Error adding meal.');
       });
     }
   };
@@ -62,7 +63,7 @@ function MealPlanningPage() {
         setIsModalOpen(false);
         fetchMeals();
       } catch (error) {
-        console.error('Error adding meal:', error.message, error.response);
+        toast.error('Error adding meal.');
       }
     }
   };
@@ -71,8 +72,21 @@ function MealPlanningPage() {
     try {
       await axios.delete(`http://localhost:3000/meals/${id}`);
       fetchMeals();
+      toast.success('Meal deleted successfully!');
     } catch (error) {
-      console.error('Error deleting meal:', error.message, error.response);
+      toast.error('Error deleting meal.');
+    }
+  };
+
+  const handleEventDrop = async (info) => {
+    const { id } = info.event.extendedProps;
+    const newDate = info.event.startStr.split('T')[0];
+    try {
+      await axios.put(`http://localhost:3000/meals/${id}`, { date: newDate });
+      fetchMeals();
+    } catch (error) {
+      toast.error('Error moving meal.');
+      info.revert();
     }
   };
 
@@ -125,7 +139,6 @@ function MealPlanningPage() {
     }
   };
 
-  // Group recipes by category
   const groupedRecipes = categoryOrder.reduce((acc, category) => {
     acc[category] = recipes.filter(recipe => recipe.is_meal_plan_candidate && recipe.category === category);
     return acc;
@@ -185,6 +198,8 @@ function MealPlanningPage() {
           right: ''
         }}
         height="auto"
+        editable={true}
+        eventDrop={handleEventDrop}
       />
       {viewMode === 'dayGridWeek' && (
         <div className="recipe-boxes">
@@ -232,6 +247,7 @@ function MealPlanningPage() {
           </div>
         </div>
       )}
+      <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );
 }
