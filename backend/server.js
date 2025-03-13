@@ -110,6 +110,22 @@ app.post('/meals', (req, res) => {
   );
 });
 
+app.put('/meals/:id', (req, res) => {
+  const { id } = req.params;
+  const { date } = req.body;
+  db.run('UPDATE meals SET date = ? WHERE id = ?', [date, id], function (err) {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    if (this.changes === 0) {
+      res.status(404).json({ error: 'Meal not found' });
+      return;
+    }
+    res.status(200).json({ success: true });
+  });
+});
+
 app.delete('/meals/:id', (req, res) => {
   const { id } = req.params;
   db.run('DELETE FROM meals WHERE id = ?', [id], function (err) {
