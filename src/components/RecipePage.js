@@ -1,5 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { toast, ToastContainer } from 'react-toastify';
 import './RecipePage.css';
 
 function RecipePage() {
@@ -12,13 +13,13 @@ function RecipePage() {
   const [category, setCategory] = useState('breakfast');
   const [thumbnailUrl, setThumbnailUrl] = useState('');
   const [selectedRecipe, setSelectedRecipe] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  // Fixed category order matching MealPlanningPage
   const categoryOrder = ['breakfast', 'appetizer', 'entree', 'side dish', 'dessert', 'snack'];
 
   useEffect(() => {
     fetchRecipes();
-  }, []);
+  }, [searchQuery]);
 
   const fetchRecipes = async () => {
     try {
@@ -30,30 +31,48 @@ function RecipePage() {
         return acc;
       }, {});
 
-      // Sort recipes within each category by title
+      const filtered = {};
       Object.keys(grouped).forEach(cat => {
-        grouped[cat].sort((a, b) => a.title.localeCompare(b.title));
+        filtered[cat] = grouped[cat].filter(recipe =>
+          recipe.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          recipe.ingredients.toLowerCase().includes(searchQuery.toLowerCase())
+        );
       });
 
-      // Apply fixed category order, with uncategorized last
       const orderedCategories = {};
       categoryOrder.forEach(cat => {
-        if (grouped[cat]) orderedCategories[cat] = grouped[cat];
+        if (filtered[cat]?.length) orderedCategories[cat] = filtered[cat];
       });
-      Object.keys(grouped).forEach(cat => {
-        if (!categoryOrder.includes(cat)) orderedCategories[cat] = grouped[cat];
+      Object.keys(filtered).forEach(cat => {
+        if (!categoryOrder.includes(cat) && filtered[cat]?.length) {
+          orderedCategories[cat] = filtered[cat];
+        }
+      });
+
+      Object.keys(orderedCategories).forEach(cat => {
+        orderedCategories[cat].sort((a, b) => a.title.localeCompare(b.title));
       });
 
       setRecipesByCategory(orderedCategories);
 
-      // Initialize all categories as open
       const initialOpenState = Object.keys(orderedCategories).reduce((acc, cat) => {
         acc[cat] = true;
         return acc;
       }, {});
       setOpenCategories(initialOpenState);
     } catch (error) {
-      console.error('Failed to fetch recipes:', error.message, error.response);
+      toast.error('Failed to fetch recipes. Please try again.');
+    }
+  };
+
+  const validateThumbnail = async (url) => {
+    if (!url) return true;
+    try {
+      const response = await fetch(url);
+      const contentType = response.headers.get('content-type');
+      return response.ok && contentType?.startsWith('image/');
+    } catch {
+      return false;
     }
   };
 
@@ -63,6 +82,14 @@ function RecipePage() {
       .filter(ing => ing.quantity && ing.name)
       .map(ing => `${ing.quantity} ${ing.unit || ''} ${ing.name}`.trim())
       .join(', ');
+    if (!ingredientString) {
+      toast.error('At least one ingredient with quantity and name is required.');
+      return;
+    }
+    if (!(await validateThumbnail(thumbnailUrl))) {
+      toast.error('Invalid thumbnail URL. Please provide a valid image URL.');
+      return;
+    }
     try {
       const response = await axios.post('http://localhost:3000/recipes', {
         title,
@@ -74,9 +101,10 @@ function RecipePage() {
       if (response.data.success) {
         fetchRecipes();
         closeModal();
+        toast.success('Recipe added successfully!');
       }
     } catch (error) {
-      console.error('Error adding recipe:', error.message, error.response);
+      toast.error('Error adding recipe. Please try again.');
     }
   };
 
@@ -85,10 +113,8 @@ function RecipePage() {
     setTitle(recipe.title);
     const parsedIngredients = recipe.ingredients
       ? recipe.ingredients.split(', ').map(ing => {
-          const [quantity, ...rest] = ing.split(' ');
-          const unit = rest.length > 1 ? rest[0] : '';
-          const name = rest.length > 1 ? rest.slice(1).join(' ') : rest.join(' ');
-          return { quantity, unit, name };
+          const parts = ing.match(/(\d*\.?\d*\s*\d*\/\d*|\d+)\s*(\w*)\s*(.*)/) || ['', '', '', ing];
+          return { quantity: parts[1] || '', unit: parts[2] || '', name: parts[3] || '' };
         })
       : [{ quantity: '', unit: '', name: '' }];
     setIngredients(parsedIngredients);
@@ -104,6 +130,14 @@ function RecipePage() {
       .filter(ing => ing.quantity && ing.name)
       .map(ing => `${ing.quantity} ${ing.unit || ''} ${ing.name}`.trim())
       .join(', ');
+    if (!ingredientString) {
+      toast.error('At least one ingredient with quantity and name is required.');
+      return;
+    }
+    if (!(await validateThumbnail(thumbnailUrl))) {
+      toast.error('Invalid thumbnail URL. Please provide a valid image URL.');
+      return;
+    }
     try {
       const response = await axios.put(`http://localhost:3000/recipes/${selectedRecipe.id}`, {
         title,
@@ -115,18 +149,22 @@ function RecipePage() {
       if (response.status === 200) {
         fetchRecipes();
         closeModal();
+        toast.success('Recipe updated successfully!');
       }
     } catch (error) {
-      console.error('Error updating recipe:', error.message, error.response);
+      toast.error('Error updating recipe. Please try again.');
     }
   };
 
   const deleteRecipe = async (id) => {
-    try {
-      await axios.delete(`http://localhost:3000/recipes/${id}`);
-      fetchRecipes();
-    } catch (error) {
-      console.error('Error deleting recipe:', error.message, error.response);
+    if (window.confirm('Are you sure you want to delete this recipe?')) {
+      try {
+        await axios.delete(`http://localhost:3000/recipes/${id}`);
+        fetchRecipes();
+        toast.success('Recipe deleted successfully!');
+      } catch (error) {
+        toast.error('Error deleting recipe. Please try again.');
+      }
     }
   };
 
@@ -134,8 +172,9 @@ function RecipePage() {
     try {
       await axios.put(`http://localhost:3000/recipes/${id}`, { is_meal_plan_candidate: isCandidate });
       fetchRecipes();
+      toast.success('Meal plan status updated!');
     } catch (error) {
-      console.error('Error updating meal plan candidate:', error.message, error.response);
+      toast.error('Error updating meal plan status.');
     }
   };
 
@@ -180,6 +219,13 @@ function RecipePage() {
     <div className="recipe-page">
       <div className="recipe-header">
         <h2>Recipes</h2>
+        <input
+          type="text"
+          placeholder="Search recipes..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          style={{ padding: '8px', marginRight: '10px', borderRadius: '3px', border: '1px solid #e6d9c2' }}
+        />
         <button className="add-recipe-btn" onClick={openModal}>Add Recipe</button>
       </div>
       <div className="recipe-container">
@@ -248,11 +294,11 @@ function RecipePage() {
                 {ingredients.map((ing, index) => (
                   <div key={index} className="ingredient-row">
                     <input
-                      type="number"
+                      type="text"
                       value={ing.quantity}
                       onChange={(e) => updateIngredient(index, 'quantity', e.target.value)}
-                      placeholder="Quantity"
-                      step="0.1"
+                      placeholder="Quantity (e.g., 1 1/2)"
+                      required
                     />
                     <input
                       type="text"
@@ -310,6 +356,7 @@ function RecipePage() {
           </div>
         </div>
       )}
+      <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );
 }
