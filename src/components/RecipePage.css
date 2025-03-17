@@ -248,6 +248,60 @@ select option {
   color: #663300;
 }
 
+/* Styles for recipe boxes in weekly view */
+.recipe-boxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.recipe-box {
+  display: block;
+  padding: 10px;
+}
+
+.recipe-box strong {
+  margin-bottom: 5px;
+}
+
+.meal-item { /* New class for meal items on Meal Planning page */
+  padding: 5px; /* Adjusted to 5px as requested */
+  cursor: pointer;
+}
+
+.meal-item.selected {
+  background-color: rgba(255,255,255,0.3);
+  border-radius: 3px;
+}
+
+.meal-item:not(:last-child) {
+  margin-bottom: 5px;
+  color: #663300;
+}
+
+/* FullCalendar custom styles to reduce vertical spacing */
+.fc .fc-daygrid-day-event {
+  margin-bottom: 0px !important; /* Eliminate space between events */
+  padding: 0px 2px !important; /* Minimize padding inside events */
+  line-height: 1 !important; /* Tighten text line height */
+  font-size: 10px !important; /* Smaller font for compactness */
+  min-height: 12px !important; /* Ensure minimal height */
+}
+
+.fc .fc-daygrid-day-frame {
+  min-height: 0 !important; /* Prevent day cells from having excessive height */
+  padding: 1px !important; /* Reduce padding in day cells */
+}
+
+.fc .fc-daygrid-day-top {
+  margin-bottom: 1px !important; /* Reduce space below date number */
+}
+
+.fc .fc-daygrid-day-events {
+  margin: 0px 0 !important; /* Eliminate margin around event container */
+}
+
 /* Responsive column adjustments */
 @media (min-width: 1200px) {
   .recipe-container {
@@ -262,12 +316,4 @@ select option {
   .recipe-grid {
     grid-template-columns: repeat(3, 1fr); /* 3 columns at 1800px */
   }
-}
-
-/* Remove unused styles */
-.recipe-list,
-.category-legend,
-.recipe-boxes,
-.recipe-box {
-  display: none;
 }

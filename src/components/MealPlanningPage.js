@@ -46,7 +46,7 @@ function MealPlanningPage() {
         recipe_id: selectedRecipe.id,
         date: arg.dateStr.split('T')[0],
       }).then(() => {
-        fetchMeals();
+        fetchMeals(); // Refresh meals to update calendar
       }).catch(() => {
         toast.error('Error adding meal.');
       });
@@ -139,8 +139,11 @@ function MealPlanningPage() {
     }
   };
 
+  // Group recipes by category, only including those with is_meal_plan_candidate = 1
   const groupedRecipes = categoryOrder.reduce((acc, category) => {
-    acc[category] = recipes.filter(recipe => recipe.is_meal_plan_candidate && recipe.category === category);
+    acc[category] = recipes.filter(recipe => 
+      recipe.category === category && recipe.is_meal_plan_candidate === 1
+    );
     return acc;
   }, {});
 
@@ -181,11 +184,11 @@ function MealPlanningPage() {
         events={events}
         dateClick={handleDateClick}
         eventContent={(arg) => (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-            <span>{arg.event.title}</span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '0 2px' }}>
+            <span style={{ fontSize: '11px', margin: 0 }}>{arg.event.title}</span>
             <button
               onClick={() => deleteMeal(arg.event.extendedProps.id)}
-              style={{ background: 'none', border: 'none', color: 'red', cursor: 'pointer', padding: '0 5px' }}
+              style={{ background: 'none', border: 'none', color: 'red', cursor: 'pointer', padding: '0 2px', fontSize: '10px' }}
             >
               x
             </button>
@@ -198,6 +201,10 @@ function MealPlanningPage() {
           right: ''
         }}
         height="auto"
+        contentHeight="auto" // Ensure calendar height adjusts to content
+        eventMinHeight={12} // Reduced to make events more compact
+        eventBorderOverlap={false} // Prevent extra spacing from borders
+        forceEventDuration={true} // Ensure events render with minimal height
         editable={true}
         eventDrop={handleEventDrop}
       />
@@ -206,18 +213,37 @@ function MealPlanningPage() {
           {categoryOrder.map(category => {
             const categoryRecipes = groupedRecipes[category];
             if (!categoryRecipes || categoryRecipes.length === 0) return null;
+            const boxHeight = Math.max(100, 30 + categoryRecipes.length * 25);
             return (
               <div
                 key={category}
                 className="recipe-box"
-                style={{ backgroundColor: getCategoryColor(category) }}
+                style={{
+                  backgroundColor: getCategoryColor(category),
+                  padding: '15px',
+                  borderRadius: '5px',
+                  width: '200px',
+                  height: `${boxHeight}px`,
+                  overflowY: 'auto',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                }}
               >
-                <strong>{category.charAt(0).toUpperCase() + category.slice(1)}</strong>
+                <strong style={{ display: 'block', marginBottom: '10px', color: '#663300' }}>
+                  {category.charAt(0).toUpperCase() + category.slice(1)}
+                </strong>
                 {categoryRecipes.map(recipe => (
                   <div
                     key={recipe.id}
-                    className={`recipe-item ${selectedRecipe && selectedRecipe.id === recipe.id ? 'selected' : ''}`}
+                    className={`meal-item ${selectedRecipe && selectedRecipe.id === recipe.id ? 'selected' : ''}`} // Changed to meal-item
                     onClick={() => handleRecipeClick(recipe)}
+                    style={{
+                      padding: '5px', // Adjusted to 5px as requested
+                      cursor: 'pointer',
+                      backgroundColor: selectedRecipe && selectedRecipe.id === recipe.id ? 'rgba(255,255,255,0.3)' : 'transparent',
+                      borderRadius: '3px',
+                      marginBottom: '5px',
+                      color: '#663300',
+                    }}
                   >
                     {recipe.title}
                   </div>
