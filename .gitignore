@@ -21,6 +21,10 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+prompts.utf-8
+prompts.py
+combine_files.bat
+combined_files.txt
 
 # Logs
 *.log
