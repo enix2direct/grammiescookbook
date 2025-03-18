@@ -141,6 +141,31 @@ app.delete('/meals/:id', (req, res) => {
   });
 });
 
+app.get('/meals/week', (req, res) => {
+  const { startDate } = req.query; // Expecting YYYY-MM-DD format
+  if (!startDate) {
+    res.status(400).json({ error: 'Start date is required' });
+    return;
+  }
+  
+  const start = new Date(startDate);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6); // End of the week (7 days total)
+
+  db.all(`
+    SELECT meals.id, meals.date, recipes.title AS recipe_title, recipes.ingredients, recipes.category
+    FROM meals
+    JOIN recipes ON meals.recipe_id = recipes.id
+    WHERE meals.date BETWEEN ? AND ?
+  `, [start.toISOString().split('T')[0], end.toISOString().split('T')[0]], (err, rows) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    res.json(rows);
+  });
+});
+
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });

@@ -15,6 +15,7 @@ function MealPlanningPage() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState('dayGridMonth');
+  const [groceryList, setGroceryList] = useState(null); // New state for grocery list
   const calendarRef = useRef(null);
 
   useEffect(() => {
@@ -38,6 +39,72 @@ function MealPlanningPage() {
     } catch (error) {
       toast.error('Failed to fetch recipes. Please try again.');
     }
+  };
+
+  // New function to generate grocery list
+  const generateGroceryList = async () => {
+    const calendarApi = calendarRef.current.getApi();
+    const startDate = calendarApi.view.activeStart; // Get the start of the current view
+    try {
+      const response = await axios.get('http://localhost:3000/meals/week', {
+        params: { startDate: startDate.toISOString().split('T')[0] },
+      });
+      const weeklyMeals = response.data;
+
+      // Parse and combine ingredients
+      const ingredientMap = {};
+      weeklyMeals.forEach(meal => {
+        const ingredients = meal.ingredients.split(', ').map(ing => {
+          const match = ing.match(/(\d*\.?\d*\s*\d*\/\d*|\d+)\s*(\w*)\s*(.*)/) || ['', '', '', ing];
+          return { quantity: match[1] || '', unit: match[2] || '', name: match[3] || '' };
+        });
+        ingredients.forEach(({ quantity, unit, name }) => {
+          if (!name) return;
+          const key = `${name.trim()}|${unit.trim()}`; // Unique key per ingredient-unit pair
+          if (!ingredientMap[key]) {
+            ingredientMap[key] = { name: name.trim(), unit: unit.trim(), quantity: 0 };
+          }
+          const qty = parseFraction(quantity);
+          if (!isNaN(qty)) {
+            ingredientMap[key].quantity += qty;
+          }
+        });
+      });
+
+      // Convert to array and format
+      const combinedList = Object.values(ingredientMap).map(item => ({
+        ...item,
+        quantity: formatQuantity(item.quantity),
+      }));
+      setGroceryList(combinedList);
+    } catch (error) {
+      toast.error('Failed to generate grocery list.');
+    }
+  };
+
+  // Helper to parse fractions like "1 1/2" or "1/2"
+  const parseFraction = (str) => {
+    if (!str) return 0;
+    const parts = str.trim().split(' ');
+    let total = 0;
+    parts.forEach(part => {
+      if (part.includes('/')) {
+        const [num, denom] = part.split('/').map(Number);
+        total += num / denom;
+      } else {
+        total += Number(part);
+      }
+    });
+    return total;
+  };
+
+  // Helper to format quantity back to string
+  const formatQuantity = (num) => {
+    if (num === Math.floor(num)) return num.toString();
+    const whole = Math.floor(num);
+    const fraction = num - whole;
+    if (fraction === 0.5) return whole ? `${whole} 1/2` : '1/2';
+    return num.toFixed(2).replace(/\.?0+$/, ''); // Simple decimal formatting
   };
 
   const handleDateClick = (arg) => {
@@ -157,6 +224,9 @@ function MealPlanningPage() {
         <button onClick={() => handleViewChange('dayGridWeek')} className={viewMode === 'dayGridWeek' ? 'action-btn' : 'cancel-btn'} style={{ marginLeft: '10px' }}>
           Week View
         </button>
+        <button onClick={generateGroceryList} className="action-btn" style={{ marginLeft: '10px' }}>
+          Generate Grocery List
+        </button>
       </div>
       {viewMode === 'dayGridMonth' && (
         <select value={selectedRecipe ? selectedRecipe.id : ''} onChange={(e) => {
@@ -234,10 +304,10 @@ function MealPlanningPage() {
                 {categoryRecipes.map(recipe => (
                   <div
                     key={recipe.id}
-                    className={`meal-item ${selectedRecipe && selectedRecipe.id === recipe.id ? 'selected' : ''}`} // Changed to meal-item
+                    className={`meal-item ${selectedRecipe && selectedRecipe.id === recipe.id ? 'selected' : ''}`}
                     onClick={() => handleRecipeClick(recipe)}
                     style={{
-                      padding: '5px', // Adjusted to 5px as requested
+                      padding: '5px',
                       cursor: 'pointer',
                       backgroundColor: selectedRecipe && selectedRecipe.id === recipe.id ? 'rgba(255,255,255,0.3)' : 'transparent',
                       borderRadius: '3px',
@@ -251,6 +321,21 @@ function MealPlanningPage() {
               </div>
             );
           })}
+        </div>
+      )}
+      {groceryList && (
+        <div className="grocery-list" style={{ marginTop: '20px', padding: '15px', backgroundColor: '#fff5e6', borderRadius: '5px' }}>
+          <h3>Grocery List for the Week</h3>
+          <ul style={{ listStyleType: 'disc', paddingLeft: '20px' }}>
+            {groceryList.map((item, index) => (
+              <li key={index} style={{ color: '#663300' }}>
+                {item.quantity} {item.unit} {item.name}
+              </li>
+            ))}
+          </ul>
+          <button onClick={() => setGroceryList(null)} className="cancel-btn" style={{ marginTop: '10px' }}>
+            Close
+          </button>
         </div>
       )}
       {isModalOpen && (
