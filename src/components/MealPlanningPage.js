@@ -15,7 +15,7 @@ function MealPlanningPage() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState('dayGridMonth');
-  const [groceryList, setGroceryList] = useState(null); // New state for grocery list
+  const [groceryList, setGroceryList] = useState(null);
   const calendarRef = useRef(null);
 
   useEffect(() => {
@@ -41,17 +41,15 @@ function MealPlanningPage() {
     }
   };
 
-  // New function to generate grocery list
   const generateGroceryList = async () => {
     const calendarApi = calendarRef.current.getApi();
-    const startDate = calendarApi.view.activeStart; // Get the start of the current view
+    const startDate = calendarApi.view.activeStart;
     try {
       const response = await axios.get('http://localhost:3000/meals/week', {
         params: { startDate: startDate.toISOString().split('T')[0] },
       });
       const weeklyMeals = response.data;
 
-      // Parse and combine ingredients
       const ingredientMap = {};
       weeklyMeals.forEach(meal => {
         const ingredients = meal.ingredients.split(', ').map(ing => {
@@ -60,7 +58,7 @@ function MealPlanningPage() {
         });
         ingredients.forEach(({ quantity, unit, name }) => {
           if (!name) return;
-          const key = `${name.trim()}|${unit.trim()}`; // Unique key per ingredient-unit pair
+          const key = `${name.trim()}|${unit.trim()}`;
           if (!ingredientMap[key]) {
             ingredientMap[key] = { name: name.trim(), unit: unit.trim(), quantity: 0 };
           }
@@ -71,7 +69,6 @@ function MealPlanningPage() {
         });
       });
 
-      // Convert to array and format
       const combinedList = Object.values(ingredientMap).map(item => ({
         ...item,
         quantity: formatQuantity(item.quantity),
@@ -82,7 +79,6 @@ function MealPlanningPage() {
     }
   };
 
-  // Helper to parse fractions like "1 1/2" or "1/2"
   const parseFraction = (str) => {
     if (!str) return 0;
     const parts = str.trim().split(' ');
@@ -98,13 +94,12 @@ function MealPlanningPage() {
     return total;
   };
 
-  // Helper to format quantity back to string
   const formatQuantity = (num) => {
     if (num === Math.floor(num)) return num.toString();
     const whole = Math.floor(num);
     const fraction = num - whole;
     if (fraction === 0.5) return whole ? `${whole} 1/2` : '1/2';
-    return num.toFixed(2).replace(/\.?0+$/, ''); // Simple decimal formatting
+    return num.toFixed(2).replace(/\.?0+$/, '');
   };
 
   const handleDateClick = (arg) => {
@@ -113,7 +108,7 @@ function MealPlanningPage() {
         recipe_id: selectedRecipe.id,
         date: arg.dateStr.split('T')[0],
       }).then(() => {
-        fetchMeals(); // Refresh meals to update calendar
+        fetchMeals();
       }).catch(() => {
         toast.error('Error adding meal.');
       });
@@ -199,14 +194,21 @@ function MealPlanningPage() {
     setSelectedRecipe(selectedRecipe && selectedRecipe.id === recipe.id ? null : recipe);
   };
 
-  const handleViewChange = (newView) => {
+  const toggleView = () => {
+    const newView = viewMode === 'dayGridMonth' ? 'dayGridWeek' : 'dayGridMonth';
     setViewMode(newView);
     if (calendarRef.current) {
       calendarRef.current.getApi().changeView(newView);
     }
+    // Close grocery list when switching views
+    setGroceryList(null);
   };
 
-  // Group recipes by category, only including those with is_meal_plan_candidate = 1
+  // Handle prev/next button clicks to close grocery list
+  const handleDatesSet = () => {
+    setGroceryList(null); // Close grocery list on navigation
+  };
+
   const groupedRecipes = categoryOrder.reduce((acc, category) => {
     acc[category] = recipes.filter(recipe => 
       recipe.category === category && recipe.is_meal_plan_candidate === 1
@@ -218,14 +220,11 @@ function MealPlanningPage() {
     <div>
       <h2>Meal Planning</h2>
       <div style={{ marginBottom: '10px' }}>
-        <button onClick={() => handleViewChange('dayGridMonth')} className={viewMode === 'dayGridMonth' ? 'action-btn' : 'cancel-btn'}>
-          Month View
-        </button>
-        <button onClick={() => handleViewChange('dayGridWeek')} className={viewMode === 'dayGridWeek' ? 'action-btn' : 'cancel-btn'} style={{ marginLeft: '10px' }}>
-          Week View
-        </button>
-        <button onClick={generateGroceryList} className="action-btn" style={{ marginLeft: '10px' }}>
-          Generate Grocery List
+        <button 
+          onClick={toggleView} 
+          className="action-btn"
+        >
+          {viewMode === 'dayGridMonth' ? 'Switch to Week View' : 'Switch to Month View'}
         </button>
       </div>
       {viewMode === 'dayGridMonth' && (
@@ -268,13 +267,20 @@ function MealPlanningPage() {
         headerToolbar={{
           left: 'prev,next',
           center: 'title',
-          right: ''
+          right: viewMode === 'dayGridWeek' ? 'generateGroceryList' : '', // Custom button in week view
         }}
+        customButtons={{
+          generateGroceryList: {
+            text: 'Generate Grocery List',
+            click: generateGroceryList,
+          },
+        }}
+        datesSet={handleDatesSet} // Hook for prev/next navigation
         height="auto"
-        contentHeight="auto" // Ensure calendar height adjusts to content
-        eventMinHeight={12} // Reduced to make events more compact
-        eventBorderOverlap={false} // Prevent extra spacing from borders
-        forceEventDuration={true} // Ensure events render with minimal height
+        contentHeight="auto"
+        eventMinHeight={12}
+        eventBorderOverlap={false}
+        forceEventDuration={true}
         editable={true}
         eventDrop={handleEventDrop}
       />
@@ -323,7 +329,7 @@ function MealPlanningPage() {
           })}
         </div>
       )}
-      {groceryList && (
+      {groceryList && viewMode === 'dayGridWeek' && (
         <div className="grocery-list" style={{ marginTop: '20px', padding: '15px', backgroundColor: '#fff5e6', borderRadius: '5px' }}>
           <h3>Grocery List for the Week</h3>
           <ul style={{ listStyleType: 'disc', paddingLeft: '20px' }}>
