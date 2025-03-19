@@ -27,7 +27,7 @@ db.serialize(() => {
     )
   `);
 
-  // Update recipes table (create new if not exists, then modify)
+  // Update recipes table
   db.run(`
     CREATE TABLE IF NOT EXISTS recipes (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -39,12 +39,13 @@ db.serialize(() => {
     )
   `);
 
-  // Meals table remains unchanged
+  // Update meals table to include quantity
   db.run(`
     CREATE TABLE IF NOT EXISTS meals (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       recipe_id INTEGER,
       date TEXT,
+      quantity INTEGER DEFAULT 1, -- Add quantity column
       FOREIGN KEY (recipe_id) REFERENCES recipes(id)
     )
   `);

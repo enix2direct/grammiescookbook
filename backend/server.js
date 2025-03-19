@@ -150,13 +150,13 @@ app.delete('/recipes/:id', (req, res) => {
 // Get all meals
 app.get('/meals', (req, res) => {
   db.all(`
-    SELECT meals.id, meals.date, recipes.title AS recipe_title, recipes.category,
+    SELECT meals.id, meals.date, meals.quantity, recipes.title AS recipe_title, recipes.category,
            GROUP_CONCAT(ri.quantity || ' ' || COALESCE(ri.unit || ' ', '') || i.name, ', ') AS ingredients
     FROM meals
     JOIN recipes ON meals.recipe_id = recipes.id
     LEFT JOIN recipe_ingredients ri ON recipes.id = ri.recipe_id
     LEFT JOIN ingredients i ON ri.ingredient_id = i.id
-    GROUP BY meals.id, meals.date, recipes.title, recipes.category
+    GROUP BY meals.id, meals.date, meals.quantity, recipes.title, recipes.category
   `, (err, rows) => {
     if (err) {
       res.status(500).json({ error: err.message });
@@ -166,18 +166,44 @@ app.get('/meals', (req, res) => {
   });
 });
 
-// Add a meal
+// Add a meal or increment quantity if it exists
 app.post('/meals', (req, res) => {
   const { recipe_id, date } = req.body;
-  db.run(
-    'INSERT INTO meals (recipe_id, date) VALUES (?, ?)',
+  db.get(
+    'SELECT id, quantity FROM meals WHERE recipe_id = ? AND date = ?',
     [recipe_id, date],
-    function (err) {
+    (err, row) => {
       if (err) {
         res.status(500).json({ error: err.message });
         return;
       }
-      res.json({ success: true, id: this.lastID });
+      if (row) {
+        // Increment quantity if meal exists
+        db.run(
+          'UPDATE meals SET quantity = quantity + 1 WHERE id = ?',
+          [row.id],
+          function (err) {
+            if (err) {
+              res.status(500).json({ error: err.message });
+              return;
+            }
+            res.json({ success: true, id: row.id });
+          }
+        );
+      } else {
+        // Insert new meal with quantity 1
+        db.run(
+          'INSERT INTO meals (recipe_id, date, quantity) VALUES (?, ?, 1)',
+          [recipe_id, date],
+          function (err) {
+            if (err) {
+              res.status(500).json({ error: err.message });
+              return;
+            }
+            res.json({ success: true, id: this.lastID });
+          }
+        );
+      }
     }
   );
 });
@@ -199,19 +225,37 @@ app.put('/meals/:id', (req, res) => {
   });
 });
 
-// Delete a meal
+// Delete a meal or decrement quantity
 app.delete('/meals/:id', (req, res) => {
   const { id } = req.params;
-  db.run('DELETE FROM meals WHERE id = ?', [id], function (err) {
+  db.get('SELECT quantity FROM meals WHERE id = ?', [id], (err, row) => {
     if (err) {
       res.status(500).json({ error: err.message });
       return;
     }
-    if (this.changes === 0) {
+    if (!row) {
       res.status(404).json({ error: 'Meal not found' });
       return;
     }
-    res.json({ success: true });
+    if (row.quantity > 1) {
+      // Decrement quantity
+      db.run('UPDATE meals SET quantity = quantity - 1 WHERE id = ?', [id], function (err) {
+        if (err) {
+          res.status(500).json({ error: err.message });
+          return;
+        }
+        res.json({ success: true });
+      });
+    } else {
+      // Delete if quantity is 1
+      db.run('DELETE FROM meals WHERE id = ?', [id], function (err) {
+        if (err) {
+          res.status(500).json({ error: err.message });
+          return;
+        }
+        res.json({ success: true });
+      });
+    }
   });
 });
 
@@ -228,14 +272,14 @@ app.get('/meals/week', (req, res) => {
   end.setDate(start.getDate() + 6);
 
   db.all(`
-    SELECT meals.id, meals.date, recipes.title AS recipe_title, recipes.category,
+    SELECT meals.id, meals.date, meals.quantity, recipes.title AS recipe_title, recipes.category,
            GROUP_CONCAT(ri.quantity || ' ' || COALESCE(ri.unit || ' ', '') || i.name, ', ') AS ingredients
     FROM meals
     JOIN recipes ON meals.recipe_id = recipes.id
     LEFT JOIN recipe_ingredients ri ON recipes.id = ri.recipe_id
     LEFT JOIN ingredients i ON ri.ingredient_id = i.id
     WHERE meals.date BETWEEN ? AND ?
-    GROUP BY meals.id, meals.date, recipes.title, recipes.category
+    GROUP BY meals.id, meals.date, meals.quantity, recipes.title, recipes.category
   `, [start.toISOString().split('T')[0], end.toISOString().split('T')[0]], (err, rows) => {
     if (err) {
       res.status(500).json({ error: err.message });

@@ -2,7 +2,7 @@ const sqlite3 = require('sqlite3').verbose();
 const db = require('./database'); // Import database.js to initialize the schema
 
 db.serialize(() => {
-  // Clear existing data (tables should now exist due to database.js import)
+  // Clear existing data
   db.run('DELETE FROM recipes', (err) => {
     if (err) console.error('Error clearing recipes:', err.message);
   });

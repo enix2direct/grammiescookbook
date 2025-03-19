@@ -100,9 +100,9 @@ function MealPlanningPage() {
           if (!ingredientMap[key]) {
             ingredientMap[key] = { name: name.trim(), unit: unit.trim(), quantity: 0 };
           }
-          const qty = parseFraction(quantity);
-          if (!isNaN(qty)) {
-            ingredientMap[key].quantity += qty;
+          const baseQty = parseFraction(quantity);
+          if (!isNaN(baseQty)) {
+            ingredientMap[key].quantity += baseQty * meal.quantity; // Multiply by meal quantity
           }
         });
       });
@@ -172,9 +172,9 @@ function MealPlanningPage() {
     try {
       await axios.delete(`http://localhost:3000/meals/${id}`);
       fetchMeals();
-      toast.success('Meal deleted successfully!');
+      toast.success('Meal instance removed!');
     } catch (error) {
-      toast.error('Error deleting meal.');
+      toast.error('Error removing meal instance.');
     }
   };
 
@@ -213,8 +213,8 @@ function MealPlanningPage() {
 
   const events = meals
     .map(meal => ({
-      title: `${meal.recipe_title}`,
-      extendedProps: { id: meal.id, category: meal.category, ingredients: meal.parsedIngredients },
+      title: meal.quantity > 1 ? `${meal.recipe_title} x ${meal.quantity}` : meal.recipe_title,
+      extendedProps: { id: meal.id, category: meal.category, ingredients: meal.parsedIngredients, quantity: meal.quantity },
       start: meal.date,
       backgroundColor: getCategoryColor(meal.category),
       borderColor: getCategoryColor(meal.category),
