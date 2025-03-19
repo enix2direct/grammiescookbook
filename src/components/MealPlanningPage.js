@@ -18,6 +18,13 @@ function MealPlanningPage() {
   const [groceryList, setGroceryList] = useState(null);
   const calendarRef = useRef(null);
 
+  // Common units for ingredient parsing (aligned with RecipePage.js)
+  const commonUnits = [
+    'cup', 'cups', 'tbsp', 'tablespoon', 'tsp', 'teaspoon', 'oz', 'ounce', 'ounces',
+    'lb', 'pound', 'pounds', 'g', 'gram', 'grams', 'kg', 'kilogram', 'kilograms',
+    'ml', 'milliliter', 'milliliters', 'l', 'liter', 'liters', 'pinch', 'dash'
+  ];
+
   useEffect(() => {
     fetchMeals();
     fetchRecipes();
@@ -26,7 +33,10 @@ function MealPlanningPage() {
   const fetchMeals = async () => {
     try {
       const response = await axios.get('http://localhost:3000/meals');
-      setMeals(response.data);
+      setMeals(response.data.map(meal => ({
+        ...meal,
+        parsedIngredients: parseIngredients(meal.ingredients)
+      })));
     } catch (error) {
       toast.error('Failed to fetch meals. Please try again.');
     }
@@ -35,10 +45,39 @@ function MealPlanningPage() {
   const fetchRecipes = async () => {
     try {
       const response = await axios.get('http://localhost:3000/recipes');
-      setRecipes(response.data);
+      setRecipes(response.data.map(recipe => ({
+        ...recipe,
+        parsedIngredients: parseIngredients(recipe.ingredients)
+      })));
     } catch (error) {
       toast.error('Failed to fetch recipes. Please try again.');
     }
+  };
+
+  // Parse ingredients string into structured objects (aligned with RecipePage.js)
+  const parseIngredients = (ingredientsString) => {
+    if (!ingredientsString || ingredientsString === '') return [];
+    return ingredientsString.split(', ').map(ing => {
+      const parts = ing.match(/(\d*\.?\d*\s*\d*\/\d*|\d+)\s*(\w*)\s*(.*)/) || [ing, '', '', ing];
+      let quantity = parts[1] || '';
+      let unitOrName = parts[2] || '';
+      let remainingName = parts[3] || '';
+
+      if (unitOrName && commonUnits.includes(unitOrName.toLowerCase())) {
+        return {
+          quantity: quantity,
+          unit: unitOrName,
+          name: remainingName.trim() || ''
+        };
+      } else {
+        const name = (unitOrName + ' ' + remainingName).trim();
+        return {
+          quantity: quantity,
+          unit: '',
+          name: name || ing.trim()
+        };
+      }
+    });
   };
 
   const generateGroceryList = async () => {
@@ -48,15 +87,14 @@ function MealPlanningPage() {
       const response = await axios.get('http://localhost:3000/meals/week', {
         params: { startDate: startDate.toISOString().split('T')[0] },
       });
-      const weeklyMeals = response.data;
+      const weeklyMeals = response.data.map(meal => ({
+        ...meal,
+        parsedIngredients: parseIngredients(meal.ingredients)
+      }));
 
       const ingredientMap = {};
       weeklyMeals.forEach(meal => {
-        const ingredients = meal.ingredients.split(', ').map(ing => {
-          const match = ing.match(/(\d*\.?\d*\s*\d*\/\d*|\d+)\s*(\w*)\s*(.*)/) || ['', '', '', ing];
-          return { quantity: match[1] || '', unit: match[2] || '', name: match[3] || '' };
-        });
-        ingredients.forEach(({ quantity, unit, name }) => {
+        meal.parsedIngredients.forEach(({ quantity, unit, name }) => {
           if (!name) return;
           const key = `${name.trim()}|${unit.trim()}`;
           if (!ingredientMap[key]) {
@@ -175,8 +213,8 @@ function MealPlanningPage() {
 
   const events = meals
     .map(meal => ({
-      title: `${meal.recipe_title} `,
-      extendedProps: { id: meal.id, category: meal.category },
+      title: `${meal.recipe_title}`,
+      extendedProps: { id: meal.id, category: meal.category, ingredients: meal.parsedIngredients },
       start: meal.date,
       backgroundColor: getCategoryColor(meal.category),
       borderColor: getCategoryColor(meal.category),
@@ -200,13 +238,11 @@ function MealPlanningPage() {
     if (calendarRef.current) {
       calendarRef.current.getApi().changeView(newView);
     }
-    // Close grocery list when switching views
     setGroceryList(null);
   };
 
-  // Handle prev/next button clicks to close grocery list
   const handleDatesSet = () => {
-    setGroceryList(null); // Close grocery list on navigation
+    setGroceryList(null);
   };
 
   const groupedRecipes = categoryOrder.reduce((acc, category) => {
@@ -254,7 +290,7 @@ function MealPlanningPage() {
         dateClick={handleDateClick}
         eventContent={(arg) => (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '0 2px' }}>
-            <span style={{ fontSize: '11px', margin: 0 }}>{arg.event.title}</span>
+            <span style={{ fontSize: '11px', margin: '0' }}>{arg.event.title}</span>
             <button
               onClick={() => deleteMeal(arg.event.extendedProps.id)}
               style={{ background: 'none', border: 'none', color: 'red', cursor: 'pointer', padding: '0 2px', fontSize: '10px' }}
@@ -267,7 +303,7 @@ function MealPlanningPage() {
         headerToolbar={{
           left: 'prev,next',
           center: 'title',
-          right: viewMode === 'dayGridWeek' ? 'generateGroceryList' : '', // Custom button in week view
+          right: viewMode === 'dayGridWeek' ? 'generateGroceryList' : '',
         }}
         customButtons={{
           generateGroceryList: {
@@ -275,7 +311,7 @@ function MealPlanningPage() {
             click: generateGroceryList,
           },
         }}
-        datesSet={handleDatesSet} // Hook for prev/next navigation
+        datesSet={handleDatesSet}
         height="auto"
         contentHeight="auto"
         eventMinHeight={12}
