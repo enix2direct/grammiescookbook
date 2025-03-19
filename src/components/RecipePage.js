@@ -17,6 +17,13 @@ function RecipePage() {
 
   const categoryOrder = ['breakfast', 'appetizer', 'entree', 'side dish', 'dessert', 'snack'];
 
+  // List of common units to distinguish from ingredient names
+  const commonUnits = [
+    'cup', 'cups', 'tbsp', 'tablespoon', 'tsp', 'teaspoon', 'oz', 'ounce', 'ounces',
+    'lb', 'pound', 'pounds', 'g', 'gram', 'grams', 'kg', 'kilogram', 'kilograms',
+    'ml', 'milliliter', 'milliliters', 'l', 'liter', 'liters', 'pinch', 'dash'
+  ];
+
   useEffect(() => {
     fetchRecipes();
   }, [searchQuery]);
@@ -27,7 +34,10 @@ function RecipePage() {
       const grouped = response.data.reduce((acc, recipe) => {
         const cat = recipe.category?.toLowerCase() || 'uncategorized';
         if (!acc[cat]) acc[cat] = [];
-        acc[cat].push(recipe);
+        acc[cat].push({
+          ...recipe,
+          ingredients: recipe.ingredients || ''
+        });
         return acc;
       }, {});
 
@@ -78,11 +88,8 @@ function RecipePage() {
 
   const addRecipe = async (e) => {
     e.preventDefault();
-    const ingredientString = ingredients
-      .filter(ing => ing.quantity && ing.name)
-      .map(ing => `${ing.quantity} ${ing.unit || ''} ${ing.name}`.trim())
-      .join(', ');
-    if (!ingredientString) {
+    const validIngredients = ingredients.filter(ing => ing.quantity && ing.name);
+    if (!validIngredients.length) {
       toast.error('At least one ingredient with quantity and name is required.');
       return;
     }
@@ -93,7 +100,7 @@ function RecipePage() {
     try {
       const response = await axios.post('http://localhost:3000/recipes', {
         title,
-        ingredients: ingredientString,
+        ingredients: validIngredients,
         instructions,
         category,
         thumbnail_url: thumbnailUrl || null,
@@ -111,10 +118,30 @@ function RecipePage() {
   const editRecipe = (recipe) => {
     setSelectedRecipe(recipe);
     setTitle(recipe.title);
-    const parsedIngredients = recipe.ingredients
+    const parsedIngredients = recipe.ingredients && recipe.ingredients !== ''
       ? recipe.ingredients.split(', ').map(ing => {
-          const parts = ing.match(/(\d*\.?\d*\s*\d*\/\d*|\d+)\s*(\w*)\s*(.*)/) || ['', '', '', ing];
-          return { quantity: parts[1] || '', unit: parts[2] || '', name: parts[3] || '' };
+          // Match quantity (including fractions), optional unit, and name
+          const parts = ing.match(/(\d*\.?\d*\s*\d*\/\d*|\d+)\s*(\w*)\s*(.*)/) || [ing, '', '', ing];
+          let quantity = parts[1] || '';
+          let unitOrName = parts[2] || '';
+          let remainingName = parts[3] || '';
+
+          // Determine if unitOrName is a unit or part of the name
+          if (unitOrName && commonUnits.includes(unitOrName.toLowerCase())) {
+            return {
+              quantity: quantity,
+              unit: unitOrName,
+              name: remainingName.trim() || ''
+            };
+          } else {
+            // If no unit, everything after quantity is the name
+            const name = (unitOrName + ' ' + remainingName).trim();
+            return {
+              quantity: quantity,
+              unit: '',
+              name: name || ing.trim() // Fallback to full string if no quantity
+            };
+          }
         })
       : [{ quantity: '', unit: '', name: '' }];
     setIngredients(parsedIngredients);
@@ -126,11 +153,8 @@ function RecipePage() {
 
   const saveRecipe = async (e) => {
     e.preventDefault();
-    const ingredientString = ingredients
-      .filter(ing => ing.quantity && ing.name)
-      .map(ing => `${ing.quantity} ${ing.unit || ''} ${ing.name}`.trim())
-      .join(', ');
-    if (!ingredientString) {
+    const validIngredients = ingredients.filter(ing => ing.quantity && ing.name);
+    if (!validIngredients.length) {
       toast.error('At least one ingredient with quantity and name is required.');
       return;
     }
@@ -141,7 +165,7 @@ function RecipePage() {
     try {
       const response = await axios.put(`http://localhost:3000/recipes/${selectedRecipe.id}`, {
         title,
-        ingredients: ingredientString,
+        ingredients: validIngredients,
         instructions,
         category,
         thumbnail_url: thumbnailUrl || null,
@@ -261,9 +285,11 @@ function RecipePage() {
                     </div>
                     <div className="recipe-content">
                       <ul className="ingredient-list">
-                        {recipe.ingredients && recipe.ingredients.split(', ').map((ing, idx) => (
-                          <li key={idx}>{ing}</li>
-                        ))}
+                        {recipe.ingredients && typeof recipe.ingredients === 'string' && recipe.ingredients !== ''
+                          ? recipe.ingredients.split(', ').map((ing, idx) => (
+                              <li key={idx}>{ing}</li>
+                            ))
+                          : <li>No ingredients listed</li>}
                         {recipe.instructions && <li className="instructions">Instructions: {recipe.instructions}</li>}
                       </ul>
                     </div>
